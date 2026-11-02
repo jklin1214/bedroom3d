@@ -5118,7 +5118,7 @@ void main() {
       chrome: { c: "#E3D3B6", r: 0.15, m: 1 },
       steel: { c: "#D6CDBE", r: 0.22, m: 1 },
       canvas_frame: { c: "#C8AD80", r: 0.25, m: 1 },
-      sofa: { c: "#B9B3AB", r: 0.85, m: 0, sh: 0.95 },
+      sofa: { c: "#B06A3F", r: 0.85, m: 0, sh: 0.95 },
       boucle: { c: "#ECE7DF", r: 0.97, m: 0, sh: 0.8 },
       linen_white: { c: "#F2EFEA", r: 0.9, m: 0, sh: 0.4 },
       chair_fabric: { c: "#8C8075", r: 0.85, m: 0, sh: 0.95 },
@@ -5159,7 +5159,7 @@ void main() {
       chrome: { c: "#E2D6BF", r: 0.18, m: 1 },
       steel: { c: "#DAD2C4", r: 0.25, m: 1 },
       canvas_frame: { c: "#CDB27E", r: 0.3, m: 1 },
-      sofa: { c: "#F2EEE8", r: 0.95, m: 0, sh: 0.7 },
+      sofa: { c: "#C98A5A", r: 0.95, m: 0, sh: 0.7 },
       boucle: { c: "#F4F1EC", r: 0.97, m: 0, sh: 0.8 },
       linen_white: { c: "#F7F5F1", r: 0.9, m: 0, sh: 0.4 },
       chair_fabric: { c: "#EEE9E1", r: 0.85, m: 0, sh: 0.9 },
@@ -8237,7 +8237,7 @@ async function $y() {
       U.name === "outdoor" && (Gf.push(ee), (ee.visible = !He)),
       it.add(ee));
   }
-  (sp(Pt, a), Zh(), Hy().catch((U) => console.error("tv", U)), Ky(), h1());
+  (__mods(), sp(Pt, a), Zh(), Hy().catch((U) => console.error("tv", U)), Ky(), h1());
   let P = nt.floor,
     R = document.createElement("canvas");
   ((R.width = 768), (R.height = 512));
@@ -9252,3 +9252,121 @@ three/build/three.module.js:
    * SPDX-License-Identifier: MIT
    *)
 */
+
+// ===== Living-room edits (bookcase ext, warm sofa, glass display, full TV wall, chandelier) =====
+function __mods() {
+  try {
+    Ge.localClippingEnabled = !0;
+    const byName = (n) => it.children.find((c) => c.isMesh && c.name === n);
+    const box = (x0, x1, y0, y1, z0, z1) => [
+      new sn(new A(1, 0, 0), -x1), new sn(new A(-1, 0, 0), x0),
+      new sn(new A(0, 1, 0), -y1), new sn(new A(0, -1, 0), y0),
+      new sn(new A(0, 0, 1), -z1), new sn(new A(0, 0, -1), z0)];
+    const clip = (names, planes) => names.forEach((n) => {
+      const m = byName(n); if (!m) return;
+      const mats = [m.material, m.userData.base, m.userData.cap].filter(Boolean);
+      new Set(mats).forEach((mt) => { mt.clippingPlanes = (mt.clippingPlanes || []).concat(planes); mt.clipIntersection = !0; mt.needsUpdate = !0; });
+    });
+    // NOTE: clipIntersection with multiple boxes on one material would merge; keep one box per material.
+    // --- clone triangles of a region (keeps uv + baked light) ---
+    const cloneRegion = (name, inside, xf) => {
+      const m = byName(name); if (!m) return;
+      const g = m.geometry, idx = g.index.array, P = g.attributes.position.array, out = [];
+      for (let k = 0; k < idx.length; k += 3) {
+        let cx = 0, cy = 0, cz = 0;
+        for (let q = 0; q < 3; q++) { cx += P[idx[k + q] * 3] / 3; cy += P[idx[k + q] * 3 + 1] / 3; cz += P[idx[k + q] * 3 + 2] / 3; }
+        if (inside(cx, cy, cz)) out.push(idx[k], idx[k + 1], idx[k + 2]);
+      }
+      if (!out.length) return;
+      const ng = new _t();
+      for (const key in g.attributes) {
+        const a = g.attributes[key], s = a.itemSize, arr = new a.array.constructor(out.length * s);
+        out.forEach((vi, j) => { for (let c = 0; c < s; c++) arr[j * s + c] = a.array[vi * s + c]; });
+        if (key === 'position') for (let j = 0; j < out.length; j++) { const r = xf(arr[j * 3], arr[j * 3 + 1], arr[j * 3 + 2]); arr[j * 3] = r[0]; arr[j * 3 + 1] = r[1]; arr[j * 3 + 2] = r[2]; }
+        ng.setAttribute(key, new lt(arr, s, a.normalized));
+      }
+      const nm = new dt(ng, m.material); nm.name = name + '_mod'; nm.userData = m.userData; nm.castShadow = nm.receiveShadow = !0; it.add(nm);
+    };
+    // 1) bookcase: copy west bookcase (z -4.16..-2.52) into the gap up to the back-wall window corner
+    const Z0 = -4.1616, Z1 = -2.5216, T0 = -5.645, sc = (Z0 - T0) / (Z1 - Z0);
+    const inBk = (x, y, z) => x > 2.215 && x < 2.53 && z > Z0 - 0.002 && z < Z1 + 0.002;
+    ['cabinet', 'books', 'vase', 'metal', 'brass', 'ledstrip'].forEach((n) =>
+      cloneRegion(n, inBk, (x, y, z) => [x, y, T0 + (z - Z0) * sc]));
+    clip(['shade', 'metal'], box(2.15, 2.66, -0.1, 1.8, -5.67, -5.2)); // remove corner floor lamp now covered by bookcase
+    // 3) glass display: cut upper doors of rear cabinet run
+    const X0 = 3.444, X1 = 9.225, YC = 1.2, YT = 2.58, ZB = -5.6, ZF = -5.07;
+    clip(['cabinet', 'molding'], box(X0 - 0.001, X1 + 0.01, YC, 2.7, -5.63, -4.94));
+    const G = new ui(); G.name = 'mods'; it.add(G);
+    it.children.forEach((o) => { if (o.userData && o.userData.name === 'cabinet' && o.material && o.material.isShaderMaterial) {
+      const m = o.material;
+      m.vertexShader = m.vertexShader.replace('void main() {', 'varying vec3 vWp; void main() { vWp = (modelMatrix * vec4(position,1.0)).xyz;');
+      m.fragmentShader = m.fragmentShader.replace('void main() {', 'varying vec3 vWp; void main() { if (vWp.x > 3.443 && vWp.x < 9.235 && vWp.y > 1.2 && vWp.z > -5.63 && vWp.z < -4.94) discard;');
+      m.needsUpdate = !0; } });
+    const std = (c, o = {}) => new ea(Object.assign({ color: new Ae(c), roughness: 0.5, metalness: 0, emissive: new Ae(c).multiplyScalar(0.55) }, o));
+    const addBox = (mat, x0, x1, y0, y1, z0, z1, par = G) => { const b = new dt(new an(x1 - x0, y1 - y0, z1 - z0), mat); b.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); par.add(b); return b; };
+    const carc = new Kt({ color: new Ae('#E6DDD0') });
+    const backM = new Kt({ color: new Ae('#EADBC2') });
+    const brassM = std('#C8AD80', { roughness: 0.3, metalness: 0.7, emissive: new Ae('#8a6c3e') });
+    const glassM = new ta({ color: 0xffffff, roughness: 0.03, metalness: 0, transparent: !0, opacity: 0.16, clearcoat: 1, depthWrite: !1, envMapIntensity: 1.5 });
+    const ledM = new Kt({ color: new Ae(3.2, 2.6, 1.8) });
+    addBox(backM, X0, X1, YC, YT, ZB - 0.02, ZB);
+    addBox(carc, X0, X1, YC - 0.03, YC, ZB, ZF + 0.01); // solid ledge
+    addBox(carc, X0, X1, YT - 0.03, YT, ZB, ZF);
+    const nb = 12, bw = (X1 - X0) / nb;
+    for (let k = 0; k <= nb; k++) { const x = X0 + k * bw; if (k % 3 == 0) addBox(carc, Math.max(X0, x - 0.012), Math.min(X1, x + 0.012), YC, YT, ZB, ZF); addBox(brassM, x - 0.008, x + 0.008, YC, YT, ZF, ZF + 0.012); }
+    [1.66, 2.12].forEach((y) => { addBox(glassM, X0, X1, y - 0.008, y, ZB, ZF - 0.02); addBox(brassM, X0, X1, y - 0.012, y, ZF - 0.03, ZF - 0.02); addBox(ledM, X0 + 0.01, X1 - 0.01, y - 0.016, y - 0.012, ZB + 0.02, ZB + 0.04); });
+    addBox(ledM, X0 + 0.01, X1 - 0.01, YT - 0.05, YT - 0.04, ZB + 0.02, ZB + 0.04);
+    addBox(brassM, X0, X1, YC, YC + 0.012, ZF, ZF + 0.012); addBox(brassM, X0, X1, YT - 0.012, YT, ZF, ZF + 0.012);
+    const gl = addBox(glassM, X0, X1, YC, YT, ZF, ZF + 0.006); gl.renderOrder = 3;
+    // display objects
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const decoM = [std('#F2EEE6', { roughness: 0.15 }), std('#C8AD80', { roughness: 0.25, metalness: 1 }), std('#8A6A4F', { roughness: 0.4 }), std('#2E2B28', { roughness: 0.3 }), std('#B9C7C2', { roughness: 0.1 })];
+    [YC, 1.66, 2.12].forEach((y) => { for (let k = 0; k < nb; k++) { if (rnd() < 0.25) continue; const x = X0 + (k + 0.3 + rnd() * 0.4) * bw, t = rnd(); const mt = decoM[Math.floor(rnd() * decoM.length)];
+      if (t < 0.45) { const h = 0.12 + rnd() * 0.18, r = 0.035 + rnd() * 0.04; const v = new dt(new sr(r * 0.6, r, h, 20), mt); v.position.set(x, y + h / 2, -5.36); G.add(v); }
+      else if (t < 0.75) { const r = 0.05 + rnd() * 0.04; const v = new dt(new Qr(r, 20, 14), mt); v.position.set(x, y + r, -5.36); G.add(v); }
+      else { for (let b = 0; b < 5; b++) addBox(decoM[(b + k) % 4], x - 0.1 + b * 0.035, x - 0.07 + b * 0.035, y, y + 0.2 + rnd() * 0.04, -5.5, -5.33); } } });
+    // 4) TV wall: extend marble feature panel across the whole wall
+    const sl = byName('slats');
+    if (sl) {
+      const ba = sl.geometry.attributes.bake; let bs = [0, 0, 0], bn = 0;
+      if (ba) { for (let v = 0; v < ba.count; v++) { bs[0] += ba.array[v * 3]; bs[1] += ba.array[v * 3 + 1]; bs[2] += ba.array[v * 3 + 2]; bn++; } bs = [0,1,2].map((c) => { const v = []; for (let q = 0; q < ba.count; q++) v.push(ba.array[q * 3 + c]); v.sort((a, b) => a - b); return v[Math.floor(v.length * 0.8)]; }); }
+      const panel = (x0, x1, y0, y1, zf, zb) => {
+        const pos = [], uv = [], nrm = [];
+        const quad = (a, b, c, d, n) => { [a, b, c, a, c, d].forEach((p) => { pos.push(...p); uv.push(0.6 * p[0] - 0.072 + (n[0] ? p[2] * 0.6 : 0), 0.6435 * p[1] + (n[1] ? p[2] * 0.6 : 0)); nrm.push(...n.map((q) => q * 127)); }); };
+        quad([x1, y0, zf], [x0, y0, zf], [x0, y1, zf], [x1, y1, zf], [0, 0, -1]);
+        quad([x0, y1, zf], [x0, y1, zb], [x1, y1, zb], [x1, y1, zf], [0, 1, 0]);
+        quad([x0, y0, zb], [x0, y0, zf], [x0, y1, zf], [x0, y1, zb], [-1, 0, 0]);
+        quad([x1, y0, zf], [x1, y0, zb], [x1, y1, zb], [x1, y1, zf], [1, 0, 0]);
+        const g = new _t(); g.setAttribute('position', new lt(new Float32Array(pos), 3)); g.setAttribute('normal', new lt(new Int8Array(nrm), 3, !0)); g.setAttribute('uv', new lt(new Float32Array(uv), 2));
+        if (ba) { const b = new Uint16Array(pos.length); for (let v = 0; v < pos.length / 3; v++) { b[v * 3] = bs[0]; b[v * 3 + 1] = bs[1]; b[v * 3 + 2] = bs[2]; } g.setAttribute('bake', new lt(b, 3, !0)); }
+        const mm = new dt(g, sl.material); mm.name = 'slats_mod'; mm.userData = sl.userData; it.add(mm);
+      };
+      panel(2.216, 4.918, 0, 2.58, 1.804, 1.864);
+      panel(8.202, 9.224, 0, 2.58, 1.804, 1.864);
+    }
+    // 5) crystal chandelier over the living area
+    const C = new ui(); C.position.set(6.56, 0, -1.96); G.add(C);
+    const crys = new ta({ color: 0xffffff, roughness: 0.02, metalness: 0, transparent: !0, opacity: 0.75, ior: 1.6, emissive: new Ae('#cfd8e0'), clearcoat: 1, clearcoatRoughness: 0, specularIntensity: 1, envMapIntensity: 2.5, iridescence: 0.4, flatShading: !0 });
+    const bulbM = new Kt({ color: new Ae(9, 7, 4.5) });
+    const goldM = std('#D4B47E', { roughness: 0.25, metalness: 0.6, emissive: new Ae('#9a7a45') });
+    const cyl = (r, h, y, mt, rt) => { const c = new dt(new sr(rt ?? r, r, h, 32, 1, !1), mt); c.position.y = y; C.add(c); return c; };
+    const ring = (R, y) => { const n = 48; for (let k = 0; k < n; k++) { const a0 = k / n * Math.PI * 2, a1 = (k + 1) / n * Math.PI * 2, l = 2 * R * Math.sin(Math.PI / n); const s = new dt(new an(l * 1.02, 0.014, 0.014), goldM); s.position.set(R * Math.cos((a0 + a1) / 2), y, R * Math.sin((a0 + a1) / 2)); s.rotation.y = -(a0 + a1) / 2 + Math.PI / 2; C.add(s); } };
+    cyl(0.11, 0.03, 2.785, goldM, 0.09); cyl(0.008, 0.28, 2.63, goldM); cyl(0.04, 0.06, 2.47, goldM);
+    const tiers = [{ R: 0.42, y: 2.38, n: 10 }, { R: 0.3, y: 2.24, n: 8 }, { R: 0.17, y: 2.12, n: 6 }];
+    const drop = new Uo(1, 0);
+    tiers.forEach(({ R, y, n }, ti) => {
+      ring(R, y);
+      for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2 + ti * 0.3; const x = R * Math.cos(a), z = R * Math.sin(a);
+        const arm = new dt(new an(R, 0.01, 0.01), goldM); arm.position.set(x / 2, y, z / 2); arm.rotation.y = -a; C.add(arm);
+        const cup = new dt(new sr(0.022, 0.012, 0.025, 12), goldM); cup.position.set(x, y + 0.02, z); C.add(cup);
+        const b = new dt(new Qr(0.018, 12, 8), bulbM); b.position.set(x, y + 0.05, z); C.add(b); }
+      const nd = Math.round(R * 70);
+      for (let k = 0; k < nd; k++) { const a = k / nd * Math.PI * 2; const L = 0.1 + (k % 3) * 0.035;
+        for (let s = 0; s < 3; s++) { const d = new dt(drop, crys); const sz = s == 2 ? 0.022 : 0.011; d.scale.set(sz * 0.7, sz * 1.6, sz * 0.7); d.position.set(R * Math.cos(a), y - 0.03 - s * L / 2.4 - (s == 2 ? 0.02 : 0), R * Math.sin(a)); C.add(d); } }
+    });
+    const big = new dt(drop, crys); big.scale.set(0.05, 0.11, 0.05); big.position.y = 2.0; C.add(big);
+    cyl(0.025, 0.2, 2.25, crys); 
+    const bl = new dt(new Qr(0.04, 16, 12), bulbM); bl.position.y = 2.3; C.add(bl);
+    console.log('DBG mods ok');
+  } catch (e) { console.error('DBG mods failed', e); }
+}
