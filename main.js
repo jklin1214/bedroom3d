@@ -5118,7 +5118,7 @@ void main() {
       chrome: { c: "#E3D3B6", r: 0.15, m: 1 },
       steel: { c: "#D6CDBE", r: 0.22, m: 1 },
       canvas_frame: { c: "#C8AD80", r: 0.25, m: 1 },
-      sofa: { c: "#B06A3F", r: 0.85, m: 0, sh: 0.95 },
+      sofa: { c: "#F1ECE4", r: 0.85, m: 0, sh: 0.95 },
       boucle: { c: "#ECE7DF", r: 0.97, m: 0, sh: 0.8 },
       linen_white: { c: "#F2EFEA", r: 0.9, m: 0, sh: 0.4 },
       chair_fabric: { c: "#8C8075", r: 0.85, m: 0, sh: 0.95 },
@@ -5159,7 +5159,7 @@ void main() {
       chrome: { c: "#E2D6BF", r: 0.18, m: 1 },
       steel: { c: "#DAD2C4", r: 0.25, m: 1 },
       canvas_frame: { c: "#CDB27E", r: 0.3, m: 1 },
-      sofa: { c: "#C98A5A", r: 0.95, m: 0, sh: 0.7 },
+      sofa: { c: "#F1ECE4", r: 0.95, m: 0, sh: 0.7 },
       boucle: { c: "#F4F1EC", r: 0.97, m: 0, sh: 0.8 },
       linen_white: { c: "#F7F5F1", r: 0.9, m: 0, sh: 0.4 },
       chair_fabric: { c: "#EEE9E1", r: 0.85, m: 0, sh: 0.9 },
@@ -9370,3 +9370,105 @@ function __mods() {
     console.log('DBG mods ok');
   } catch (e) { console.error('DBG mods failed', e); }
 }
+
+// ===== Annotation UI (標註) =====
+(function(){
+  const css=`#anBtn{position:fixed;right:10px;top:46%;z-index:60;font:600 14px var(--body,sans-serif);padding:9px 13px;border-radius:22px;border:1px solid rgba(0,0,0,.15);background:#fff;color:#222;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+#anBtn.on{background:#e53935;color:#fff}
+#anCv{position:fixed;inset:0;width:100%;height:100%;z-index:50;touch-action:none;pointer-events:none}
+#anCv.on{pointer-events:auto;cursor:crosshair}
+#anBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 10px);z-index:61;display:none;flex-wrap:wrap;justify-content:center;gap:4px;width:min(372px,calc(100% - 16px));padding:6px;border-radius:14px;background:rgba(20,20,20,.82);touch-action:none;-webkit-user-select:none;user-select:none}
+#anBar.on{display:flex}
+#anBar button{font:500 12.5px var(--body,sans-serif);color:#fff;background:rgba(255,255,255,.12);border:0;border-radius:8px;padding:7px 8px;min-width:34px}
+#anBar button.sel{background:#fff;color:#111}
+#anBar .c{width:28px;height:28px;min-width:28px;padding:0;border-radius:50%;border:2px solid transparent}
+#anBar .c.sel{border-color:#fff;outline:2px solid #000}
+#anBar .sep{width:100%;height:0}
+#anToast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:70;background:rgba(0,0,0,.85);color:#fff;padding:12px 14px;border-radius:10px;font:13px var(--body,sans-serif);max-width:86%;display:none;white-space:pre-wrap;word-break:break-all;text-align:center}
+body.annot .dock,body.annot #hint{visibility:hidden}`;
+  const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+  const cv=document.createElement('canvas');cv.id='anCv';document.body.appendChild(cv);
+  const ctx=cv.getContext('2d');
+  const btn=document.createElement('button');btn.id='anBtn';btn.type='button';btn.textContent='✏️ 標註';document.body.appendChild(btn);
+  const bar=document.createElement('div');bar.id='anBar';document.body.appendChild(bar);
+  const toast=document.createElement('div');toast.id='anToast';document.body.appendChild(toast);
+  const S={on:false,color:'#e53935',w:4,tool:'pen',items:[],cur:null};
+  const COLORS=[['#e53935','紅'],['#fdd835','黃'],['#1e88e5','藍'],['#43a047','綠']];
+  const mk=(t,f,cls)=>{const b=document.createElement('button');b.type='button';b.innerHTML=t;if(cls)b.className=cls;b.onclick=f;bar.appendChild(b);return b;};
+  const cBtns=COLORS.map(([c,n])=>{const b=mk('',()=>{S.color=c;sync();},'c');b.style.background=c;b.title=n;b.setAttribute('aria-label',n);b.dataset.v=c;return b;});
+  const wBtns=[[3,'細'],[8,'粗']].map(([w,n])=>{const b=mk(n,()=>{S.w=w;sync();});b.dataset.v=w;return b;});
+  bar.appendChild(Object.assign(document.createElement('div'),{className:'sep'}));
+  const tBtns=[['pen','畫筆'],['arrow','箭頭'],['rect','框選'],['text','文字']].map(([t,n])=>{const b=mk(n,()=>{S.tool=t;sync();});b.dataset.v=t;return b;});
+  mk('復原',()=>{S.items.pop();draw();});
+  mk('清除',()=>{if(!S.items.length||confirm('清除所有標註？')){S.items=[];draw();}});
+  bar.appendChild(Object.assign(document.createElement('div'),{className:'sep'}));
+  mk('💾 儲存圖片',()=>save());
+  mk('📍 複製視角',()=>copyView());
+  mk('✅ 完成/離開',()=>setOn(false));
+  function sync(){cBtns.forEach(b=>b.classList.toggle('sel',b.dataset.v===S.color));wBtns.forEach(b=>b.classList.toggle('sel',+b.dataset.v===S.w));tBtns.forEach(b=>b.classList.toggle('sel',b.dataset.v===S.tool));}
+  sync();
+  let dpr=1;
+  function resize(){dpr=Math.min(devicePixelRatio||1,3);cv.width=Math.round(innerWidth*dpr);cv.height=Math.round(innerHeight*dpr);draw();}
+  addEventListener('resize',resize);resize();
+  function paint(c,it,k){
+    c.save();c.scale(k,k);c.strokeStyle=c.fillStyle=it.color;c.lineWidth=it.w;c.lineCap='round';c.lineJoin='round';
+    const p=it.pts;
+    if(it.tool==='pen'){c.beginPath();p.forEach((q,i)=>i?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]));if(p.length===1)c.lineTo(p[0][0]+.1,p[0][1]);c.stroke();}
+    else if(it.tool==='rect'&&p.length>1){c.strokeRect(p[0][0],p[0][1],p[1][0]-p[0][0],p[1][1]-p[0][1]);}
+    else if(it.tool==='arrow'&&p.length>1){const[a,b]=p,ang=Math.atan2(b[1]-a[1],b[0]-a[0]),h=10+it.w*2.2;c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke();c.beginPath();c.moveTo(b[0],b[1]);c.lineTo(b[0]-h*Math.cos(ang-.45),b[1]-h*Math.sin(ang-.45));c.lineTo(b[0]-h*Math.cos(ang+.45),b[1]-h*Math.sin(ang+.45));c.closePath();c.fill();}
+    else if(it.tool==='text'){const fs=it.w>5?24:17;c.font=`700 ${fs}px "Noto Sans TC",sans-serif`;c.textBaseline='middle';c.lineWidth=4;c.strokeStyle='rgba(0,0,0,.75)';c.strokeText(it.text,p[0][0],p[0][1]);c.fillText(it.text,p[0][0],p[0][1]);}
+    c.restore();
+  }
+  function draw(){ctx.clearRect(0,0,cv.width,cv.height);S.items.forEach(it=>paint(ctx,it,dpr));if(S.cur)paint(ctx,S.cur,dpr);}
+  const pos=e=>[e.clientX,e.clientY];
+  cv.addEventListener('pointerdown',e=>{if(!S.on)return;e.preventDefault();
+    if(S.tool==='text'){const p=pos(e);setTimeout(()=>{const t=prompt('輸入文字：');if(t&&t.trim()){S.items.push({tool:'text',color:S.color,w:S.w,pts:[p],text:t.trim()});draw();}},10);return;}
+    cv.setPointerCapture(e.pointerId);S.cur={tool:S.tool,color:S.color,w:S.w,pts:[pos(e)]};draw();});
+  cv.addEventListener('pointermove',e=>{if(!S.cur)return;e.preventDefault();const p=pos(e);if(S.cur.tool==='pen')S.cur.pts.push(p);else S.cur.pts[1]=p;draw();});
+  const up=()=>{if(!S.cur)return;if(S.cur.tool==='pen'||S.cur.pts.length>1)S.items.push(S.cur);S.cur=null;draw();};
+  cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+  ['touchstart','touchmove','gesturestart'].forEach(t=>cv.addEventListener(t,e=>{if(S.on)e.preventDefault();},{passive:false}));
+  function setOn(v){S.on=v;btn.classList.toggle('on',v);btn.textContent=v?'✏️ 標註中':'✏️ 標註';cv.classList.toggle('on',v);bar.classList.toggle('on',v);document.body.classList.toggle('annot',v);at.enabled=!v;}
+  btn.onclick=()=>setOn(!S.on);
+  function info(){const v=document.querySelector('#views button[aria-pressed="true"]'),s=document.querySelector('#styles [aria-checked="true"]'),t=document.querySelector('#times [aria-checked="true"]');return [v?v.textContent:'自由視角',s?s.textContent:'',t?t.textContent:''].filter(Boolean).join('・');}
+  const f2=n=>n.toFixed(2);
+  function viewCode(){const p=Be.position,t=at.target;return `VIEW p=${f2(p.x)},${f2(p.y)},${f2(p.z)} t=${f2(t.x)},${f2(t.y)},${f2(t.z)} fov=${Math.round(Be.fov)} [${info()}]`;}
+  function showToast(m,ms=2600){toast.textContent=m;toast.style.display='block';clearTimeout(showToast.h);showToast.h=setTimeout(()=>toast.style.display='none',ms);}
+  async function copyView(){const c=viewCode();try{await navigator.clipboard.writeText(c);showToast('已複製視角代碼：\n'+c,4000);}catch(e){prompt('複製這段視角代碼：',c);}}
+  window.__annotViewCode=viewCode;
+  // capture right after the composer renders (no preserveDrawingBuffer needed)
+  let capRes=null;const _r=Es.render.bind(Es);
+  Es.render=function(...a){const r=_r(...a);if(capRes){const f=capRes;capRes=null;try{const g=Ge.domElement,o=document.createElement('canvas');o.width=g.width;o.height=g.height;o.getContext('2d').drawImage(g,0,0);f(o);}catch(e){f(null);}}return r;};
+  function grab(){return new Promise(res=>{capRes=res;ei=Math.max(ei,2);setTimeout(()=>{if(capRes===res){capRes=null;res(null);}},8000);});}
+  async function save(){
+    showToast('產生圖片中…',8000);
+    const g=await grab();const W=Math.round(innerWidth*dpr),H=Math.round(innerHeight*dpr);
+    const o=document.createElement('canvas');o.width=W;o.height=H;const c=o.getContext('2d');
+    c.fillStyle='#ddd';c.fillRect(0,0,W,H);if(g)c.drawImage(g,0,0,W,H);
+    c.drawImage(cv,0,0,W,H);
+    const cap=info()+'  '+new Date().toLocaleString('zh-TW',{hour12:false}),fs=13*dpr;
+    c.font=`500 ${fs}px "Noto Sans TC",sans-serif`;const tw=c.measureText(cap).width;
+    c.fillStyle='rgba(0,0,0,.6)';c.fillRect(8*dpr,H-fs-18*dpr,tw+14*dpr,fs+10*dpr);c.fillStyle='#fff';c.textBaseline='middle';c.fillText(cap,15*dpr,H-fs/2-13*dpr);
+    const blob=await new Promise(r=>o.toBlob(r,'image/png'));
+    const name='標註_'+info().replace(/[\\/:*?"<>|・\s]+/g,'_')+'.png';
+    window.__annotLast=o;
+    try{const file=new File([blob],name,{type:'image/png'});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){toast.style.display='none';await navigator.share({files:[file],title:'3D 標註',text:viewCode()});return;}}catch(e){if(e&&e.name==='AbortError'){toast.style.display='none';return;}}
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);
+    showToast(g?'圖片已下載':'圖片已下載（3D 畫面擷取失敗，只有標註）');
+  }
+})();
+
+// ===== White TV wall (白色系電視牆) =====
+(function(){
+  const W=new Ae('#F4F2EE');
+  const patch=(mt)=>{ if(!mt||mt.__white) return; mt.__white=1;
+    if(mt.isShaderMaterial){ if(mt.uniforms&&mt.uniforms.albedo) mt.uniforms.albedo.value.copy(W); return; }
+    const prev=mt.onBeforeCompile;
+    mt.onBeforeCompile=(sh,r)=>{ prev&&prev.call(mt,sh,r); sh.uniforms.uWhite={value:W};
+      sh.fragmentShader='uniform vec3 uWhite;\n'+sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n diffuseColor.rgb = mix(diffuseColor.rgb, uWhite, 0.85);'); };
+    mt.customProgramCacheKey=()=> 'white1'; mt.needsUpdate=!0; };
+  const run=()=>{ let n=0; it.traverse(o=>{ if(o.isMesh&&(o.name==='slats'||o.name==='slats_mod'||(o.userData&&o.userData.name==='slats'))){ n++; [o.material,o.userData.base,o.userData.cap].forEach(patch);} }); return n; };
+  const h=setInterval(()=>{ if(run()>0 && it.getObjectByName('slats_mod')){ clearInterval(h); ei=Math.max(ei,2); } },700);
+  setTimeout(()=>clearInterval(h),180000);
+})();
