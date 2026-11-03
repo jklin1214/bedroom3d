@@ -9733,18 +9733,20 @@ function __master() {
     const F = (n, x, y, z) => {
       if (n === 'ceiling') return (x > 2.12 && x < 9.30 && y > 2.7 && z >= 1.84 && z < 2.06) ? DZ : (y > 2.7 && x > 4.0 && x < 8.745 && z >= 2.06 && z < 3.95) ? DB : 0;
       if (n === 'downlight' || n === 'cove') return (y > 2.7 && x > 4.0 && x < 8.745 && z >= 2.06 && z < 3.95) ? DB : 0;
+      if (n === 'glass') return (x > 7.3 && x < 8.0 && z > 1.55 && z < 1.80 && y > 0.3 && y < 0.6) ? DZ : (x > 4.0 && x < 8.745 && z >= 2.06 && z < 3.95 && y > 0 && y < 2.5) ? DB : 0;
       if (WALLS.test(n)) {
         if (x > 2.12 && x < 9.30 && z >= 1.84 && z < 2.06) return DZ;
         if (z > 1.65 && z < 1.84) return (n === 'molding' && x > 2.12 && x < 9.2) ? DZ : 0;
-        if (n === 'wall') return (x > 4.0 && x < 8.745 && z >= 2.06 && z < 3.95) ? DB : 0;
+        if (n === 'wall') return (x > 4.0 && (x < 8.70 || (x < 8.745 && z < 3.19)) && z >= 2.06 && z < 3.95) ? DB : 0;
         return inBath(x, z) ? DB : 0; }
       // fixtures / furniture
-      if (x > 0.7 && x < 9.2 && z > 1.0 && z < 1.875 && y > 0.004) return DZ;          // TV wall, console, deco, screen, plant
+      if (y < -1) return 0;
+      if (x > 0.7 && x < 9.2 && z > 1.0 && z < 1.875 && y > -0.05) return DZ;          // TV wall, console, deco, screen, plant
       if (x > 5.3 && x < 6.35 && z >= 1.99 && z < 2.5 && y > 0.05) return DZ;          // vanity follows new north wall
       if (x > 8.72 && x < 9.24 && z >= 1.99 && z < 2.5 && y > 0.9) return DZ;          // towel shelves follow north wall
       if (inBath(x, z) || (x > 4.0 && x < 9.24 && z >= 1.99 && z < 2.06)) return DB;
       return 0; };
-    meshes(/./).forEach((m) => { if (NOT.test(m.name)) return; const P = m.geometry.attributes.position; let h = 0;
+    meshes(/./).forEach((m) => { if (NOT.test(m.name) && m.name !== 'glass') return; const P = m.geometry.attributes.position; let h = 0;
       for (let v = 0; v < P.count; v++) { const d = F(m.name, P.getX(v), P.getY(v), P.getZ(v)); if (d) { P.setZ(v, P.getZ(v) + d); h++; } }
       if (h) { P.needsUpdate = !0; m.geometry.computeBoundingSphere(); m.geometry.computeBoundingBox(); } });
     mvz(/^(door|dleaf_[oc]|dhw_[oc]|dmold_[oc])$/, (x, y, z) => (x > 4.7 && x < 5.7 && z > 3.0 && z < 3.95 ? DB : 0));
@@ -9754,8 +9756,23 @@ function __master() {
     const Y = 0.0015;
     patch('floor_oak', r0, [qy(2.21, 4.14, 0.80, 2.10, Y), qy(4.06, 6.05, 3.15, 3.95, Y), qy(5.97, 8.74, 2.45, 3.25, Y)], [4.3, 6.0, -0.01, 0.01, 4.0, 5.5]);
     patch('btile', r0, [qy(4.12, 9.22, 0.80, 1.45, Y)], [4.2, 5.9, -0.01, 0.01, 1.5, 3.1]);
-    patch('floor_oak', r0, [qy(-2.62, 2.13, -2.50, -2.37, 0.002), qy(-0.31, -0.18, -5.66, -2.48, 0.002)], [-2.0, -0.8, -0.01, 0.01, -4.0, -3.0]);
-    { const pf = it.children[it.children.length - 1]; if (pf && pf.name === 'floor_oak_mp') { pf.name = 'play_floor'; pf.visible = !1; } }
+    dropTris(/^ceiling$/, r0, [2.2, 9.22, 2.5, 2.6, 0.80, 1.90]);           // living 2.58 ceiling band no longer runs through the bath
+    addDisc(/^(wall|bwall)$/, r0, [9.215, 9.40, 0.26, 2.44, 1.20, 1.86]);    // re-open the (frosted) window, now the bath window
+    const nPre = it.children.length;
+    patch('floor_oak', r0, [qy(-2.62, 2.13, -2.50, -2.37, 0.002), qy(-0.31, -0.18, -5.66, -2.48, 0.002), qy(-2.73, -2.60, -5.66, -2.39, 0.002), qy(-3.62, -2.70, -3.645, -3.54, 0.002), qy(-3.61, -2.70, -5.66, -3.63, 0.001)], [-2.0, -0.8, -0.01, 0.01, -4.0, -3.0]);
+    patch('floor_oak', r0, [qy(2.11, 2.58, -5.66, -2.39, 0.002)], [3.0, 4.0, -0.01, 0.01, -3.6, -2.7]);
+    it.children.slice(nPre).forEach((pf) => { if (pf.name === 'floor_oak_mp') { pf.name = 'play_floor'; pf.visible = !1; } });
+    // ---- baked-light fixes for moved/stretched surfaces (re-applied after every lightmap switch) ----
+    const BF = [];
+    const bfix = (re, pick, samp, pct) => meshes(re).forEach((m) => { const P = m.geometry.attributes.position, N = m.geometry.attributes.normal, B = m.geometry.attributes.bake; if (!B) return;
+      const T = [], S = []; for (let v = 0; v < P.count; v++) { const a = [P.getX(v), P.getY(v), P.getZ(v), N.getX(v), N.getY(v), N.getZ(v)]; if (pick(...a)) T.push(v); if (samp(...a)) S.push(v); }
+      if (T.length && S.length) BF.push({ B, T, S, pct }); });
+    const nN = (q) => q / (Math.abs(q) > 1.5 ? 127 : 1);
+    bfix(/^(wall|skirting)$/, (x, y, z, nx) => nN(nx) < -0.9 && x > 2.10 && x < 2.16 && z > 0.6 && z < 2.1, (x, y, z, nx) => nN(nx) < -0.9 && x > 2.10 && x < 2.16 && z > 3.0 && z < 6.5, 0.5);
+    bfix(/^wall$/, (x, y, z, nx, ny, nz) => nN(nz) < -0.9 && z > 0.65 && z < 0.75 && x > 2.1 && x < 9.25, (x, y, z, nx, ny, nz) => nN(nz) < -0.9 && z > 0.65 && z < 0.75 && x > 2.1 && x < 9.25, 0.85);
+    bfix(/^(slats|slats_mod)$/, () => !0, () => !0, 0.95);
+    const bApply = () => BF.forEach(({ B, T, S, pct }) => { const A = B.array; for (let c = 0; c < 3; c++) { const v = S.map((q) => A[q * 3 + c]).sort((a, b) => a - b); const t = v[Math.min(v.length - 1, Math.floor(v.length * pct))]; T.forEach((q) => { A[q * 3 + c] = t; }); } B.needsUpdate = !0; });
+    bApply(); const _Fm = Fy; Fy = function (...a) { const o = _Fm.apply(this, a); bApply(); return o; };
     applyDisc();
     // 5) projector screen: max 16:9 that fully drops to the floor (image 4.41 x 2.48 m, ~199")
     const SW = 4.60, SC = 2.72;
@@ -9779,9 +9796,9 @@ function __master() {
 function __play() {
   try {
     const U = { value: 0 };
-    const BOX = [[-2.605, 2.115, -0.02, 2.79, -5.60, -2.49], [-0.305, -0.185, -0.02, 2.79, -5.665, -2.38], [-2.62, 2.13, -0.02, 2.79, -2.495, -2.355]];
+    const BOX = [[-2.605, 2.115, -0.02, 2.79, -5.60, -2.49], [-0.305, -0.185, -0.02, 2.79, -5.665, -2.38], [-2.62, 2.13, -0.02, 2.79, -2.495, -2.355], [-2.725, -2.60, -0.02, 2.79, -5.655, -2.385], [-3.605, -2.70, -0.02, 2.79, -5.655, -3.54], [2.10, 2.60, -0.02, 2.79, -5.655, -2.385], [2.55, 3.385, -0.02, 1.0, -5.40, -4.48]];
     const cond = BOX.map((b) => `(vPw.x>${b[0]}&&vPw.x<${b[1]}&&vPw.y>${b[2]}&&vPw.y<${b[3]}&&vPw.z>${b[4]}&&vPw.z<${b[5]})`).join('||');
-    const SKIP = /^(floor_oak.*|ktile|ceiling|downlight|glass|frame|sheer|curtain|facade|outdoor|c_.*|cove|play_.*)$/;
+    const SKIP = /^(floor_oak.*|ktile|rug2|ceiling|downlight|glass|frame|sheer|curtain|facade|outdoor|c_.*|cove|play_.*)$/;
     const HIDE = /^(kacc|kfurn|kbed|kbed2)_[gb](_.*)?$/;
     const patchMat = (mt) => { if (!mt || mt.__pl) return; mt.__pl = 1; const prev = mt.onBeforeCompile, pk = mt.customProgramCacheKey;
       mt.onBeforeCompile = function (sh, rr) { prev && prev.call(this, sh, rr); sh.uniforms.uPlay = U;
