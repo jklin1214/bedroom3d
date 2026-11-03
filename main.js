@@ -9798,13 +9798,13 @@ function __master() {
     window.__Wh = Wh; fixMir(); { let c = 0; const iv = setInterval(() => { fixMir(); if (++c > 600) clearInterval(iv); }, 200); }
 
     // ===== STEP 2: projector screen -> max 16:9 touching the floor =====
-    { const K = o1 / (o1 - 0.30), cx = It((Uf + Nf) / 2); let cnt = 0, cs = 0;
+    { const SDX = 0.228, K = o1 / (o1 - 0.30), cx = It((Uf + Nf) / 2); let cnt = 0, cs = 0;
       it.children.forEach((m) => { if (!m.isMesh || !/^scr_(fabric|dark)$/.test(m.name)) return; const P = m.geometry.attributes.position;
-        for (let v = 0; v < P.count; v++) { P.setX(v, cx + (P.getX(v) - cx) * K); P.setY(v, o1 - (o1 - P.getY(v)) * K); cnt++; } P.needsUpdate = !0; m.geometry.computeBoundingBox(); m.geometry.computeBoundingSphere(); });
+        for (let v = 0; v < P.count; v++) { P.setX(v, cx + (P.getX(v) - cx) * K + SDX); P.setY(v, o1 - (o1 - P.getY(v)) * K); cnt++; } P.needsUpdate = !0; m.geometry.computeBoundingBox(); m.geometry.computeBoundingSphere(); });
       it.children.forEach((m) => { if (!m.isMesh || m.name !== 'dark') return; const P = m.geometry.attributes.position; let h = 0;
-        for (let v = 0; v < P.count; v++) { const x = P.getX(v), y = P.getY(v), z = P.getZ(v); if (x > 0.70 && x < 4.85 && y > 2.45 && y < 2.65 && z > 0.40 && z < 0.66) { P.setX(v, cx + (x - cx) * K); h++; } }
+        for (let v = 0; v < P.count; v++) { const x = P.getX(v), y = P.getY(v), z = P.getZ(v); if (x > 0.70 && x < 4.85 && y > 2.45 && y < 2.65 && z > 0.40 && z < 0.66) { P.setX(v, cx + (x - cx) * K + SDX); h++; } }
         if (h) { P.needsUpdate = !0; m.geometry.computeBoundingSphere(); cs += h; } });
-      const hw = (Nf - Uf) / 2 * K; Uf = (Uf + Nf) / 2 - hw; Nf = Uf + 2 * hw;
+      const hw = (Nf - Uf) / 2 * K; Uf = (Uf + Nf) / 2 - hw + SDX / zt; Nf = Uf + 2 * hw;
       fs = o1 - (o1 - fs) * K; ur = o1 - (o1 - ur) * K; l1 = l1 * K;
       console.log('DBG step2 K=' + K.toFixed(4) + ' pic ' + ((Nf - Uf) * zt).toFixed(3) + 'x' + (ur - fs).toFixed(3) + ' fs ' + fs.toFixed(3) + ' ur ' + ur.toFixed(3) + ' x ' + It(Uf).toFixed(3) + '..' + It(Nf).toFixed(3) + ' scrV ' + cnt + ' caseV ' + cs);
       const _bl = bl; bl = function (i) { const r = _bl.apply(this, arguments); const on = i > 0.002; if (vt.pj) vt.pj.layers.set(vt.pj.visible ? 0 : 31); vt.scr.forEach((t) => t.mesh.layers.set(on ? 0 : 31)); return r; };
