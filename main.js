@@ -8237,7 +8237,7 @@ async function $y() {
       U.name === "outdoor" && (Gf.push(ee), (ee.visible = !He)),
       it.add(ee));
   }
-  (__mods(), __kids(), sp(Pt, a), Zh(), Hy().catch((U) => console.error("tv", U)), Ky(), h1());
+  (__mods(), __kids(), __master(), sp(Pt, a), Zh(), Hy().catch((U) => console.error("tv", U)), Ky(), h1());
   let P = nt.floor,
     R = document.createElement("canvas");
   ((R.width = 768), (R.height = 512));
@@ -9629,4 +9629,165 @@ function __kids() {
     window.__setView = (p, t, f) => { Be.position.set(...p); at.target.set(...t); if (f) { Be.fov = f; Be.updateProjectionMatrix(); } at.update(); ei = Math.max(ei, 3); };
     console.log('DBG kids ok');
   } catch (e) { console.error('DBG kids failed', e); }
+}
+
+// ===== STEP1: move living/master wall + TV wall 1.17 m toward sofa; master bath moved rigidly north; bedroom gains the space =====
+function __master() {
+  try {
+    const R = [ // local(room1) -> world
+      { s: 1, ox: 0, oz: 0 }, { s: 1, ox: 2.419, oz: 0 },
+      { s: -1, ox: -2.911, oz: 0.984 }, { s: -1, ox: -0.492, oz: 0.984 }];
+    const W = (r, x, z) => [r.ox + r.s * x, r.oz + r.s * z];
+    const L = (r, x, z) => [r.s * (x - r.ox), r.s * (z - r.oz)];
+    const meshes = (re) => it.children.filter((c) => c.isMesh && !c.isInstancedMesh && re.test(c.name));
+    const inB = (b, x, y, z) => x >= b[0] && x <= b[1] && y >= b[2] && y <= b[3] && z >= b[4] && z <= b[5];
+    const wbox = (r, b) => { const a = W(r, b[0], b[4]), c = W(r, b[1], b[5]); return [Math.min(a[0], c[0]), Math.max(a[0], c[0]), b[2], b[3], Math.min(a[1], c[1]), Math.max(a[1], c[1])]; };
+    // in-place vertex transform (local coords), positions + normals
+    const xformVerts = (re, r, b, f) => meshes(re).forEach((m) => {
+      const P = m.geometry.attributes.position, N = m.geometry.attributes.normal; let hit = 0;
+      for (let v = 0; v < P.count; v++) {
+        const [lx, lz] = L(r, P.getX(v), P.getZ(v)), y = P.getY(v);
+        if (!inB(b, lx, y, lz)) continue;
+        const o = f(lx, y, lz, N.getX(v) * r.s, N.getZ(v) * r.s); const w = W(r, o[0], o[2]);
+        P.setXYZ(v, w[0], o[1], w[1]); if (o[3] !== undefined) N.setXYZ(v, o[3] * r.s, N.getY(v), o[4] * r.s); hit++;
+      }
+      if (hit) { P.needsUpdate = N.needsUpdate = !0; m.geometry.computeBoundingSphere(); m.geometry.computeBoundingBox(); }
+    });
+    // remove triangles with centroid in local box
+    const dropTris = (re, r, b) => meshes(re).forEach((m) => {
+      const g = m.geometry, I = g.index.array, P = g.attributes.position.array, out = [];
+      for (let k = 0; k < I.length; k += 3) { let cx = 0, cy = 0, cz = 0; for (let q = 0; q < 3; q++) { cx += P[I[k + q] * 3] / 3; cy += P[I[k + q] * 3 + 1] / 3; cz += P[I[k + q] * 3 + 2] / 3; }
+        const [lx, lz] = L(r, cx, cz); if (!inB(b, lx, cy, lz)) out.push(I[k], I[k + 1], I[k + 2]); }
+      if (out.length < I.length) g.setIndex(new lt(new I.constructor(out), 1));
+    });
+    // clone triangles with centroid in local box, transformed (bake refreshed on light switch)
+    const clones = [];
+    const cloneRegion = (re, r, b, f) => meshes(re).forEach((m) => {
+      const g = m.geometry, idx = g.index.array, P = g.attributes.position.array, out = [];
+      for (let k = 0; k < idx.length; k += 3) { let cx = 0, cy = 0, cz = 0; for (let q = 0; q < 3; q++) { cx += P[idx[k + q] * 3] / 3; cy += P[idx[k + q] * 3 + 1] / 3; cz += P[idx[k + q] * 3 + 2] / 3; }
+        const [lx, lz] = L(r, cx, cz); if (inB(b, lx, cy, lz)) out.push(idx[k], idx[k + 1], idx[k + 2]); }
+      if (!out.length) return;
+      const ng = new _t();
+      for (const key in g.attributes) { const a = g.attributes[key], s = a.itemSize, arr = new a.array.constructor(out.length * s);
+        out.forEach((vi, j) => { for (let c = 0; c < s; c++) arr[j * s + c] = a.array[vi * s + c]; });
+        if (key === 'position') for (let j = 0; j < out.length; j++) { const [lx, lz] = L(r, arr[j * 3], arr[j * 3 + 2]); const o = f(lx, arr[j * 3 + 1], lz); const w = W(r, o[0], o[2]); arr[j * 3] = w[0]; arr[j * 3 + 1] = o[1]; arr[j * 3 + 2] = w[1]; }
+        ng.setAttribute(key, new lt(arr, s, a.normalized)); }
+      ng.setAttribute('kidKeep', new lt(new Float32Array(out.length).fill(1), 1)); const nm = new dt(ng, m.material); nm.name = m.name + '_mk'; nm.userData = m.userData; nm.castShadow = nm.receiveShadow = !0; it.add(nm);
+      clones.push({ src: g, dst: ng, map: out });
+    });
+    // world-box discard on materials (exact rectangular cuts)
+    const disc = {};
+    const addDisc = (re, r, b) => meshes(re).forEach((m0) => { [m0].concat(it.children.filter((c) => c.isMesh && c !== m0 && c.userData && c.userData.name === m0.name && c.material && c.material.isShaderMaterial)).forEach((m) => { const k = m.uuid; (disc[k] = disc[k] || { m, boxes: [] }).boxes.push(wbox(r, b)); }); });
+    const applyDisc = () => Object.values(disc).forEach(({ m, boxes }) => {
+      const cond = boxes.map((b) => `(vKw.x>${b[0].toFixed(4)}&&vKw.x<${b[1].toFixed(4)}&&vKw.y>${b[2].toFixed(4)}&&vKw.y<${b[3].toFixed(4)}&&vKw.z>${b[4].toFixed(4)}&&vKw.z<${b[5].toFixed(4)})`).join('||');
+      new Set([m.material, m.userData.base, m.userData.cap].filter(Boolean)).forEach((mt) => {
+        if (mt.__md) return; mt.__md = 1; const prev = mt.onBeforeCompile, pk = mt.customProgramCacheKey;
+        mt.onBeforeCompile = (sh, rr) => { prev && prev.call(mt, sh, rr);
+          const had = sh.vertexShader.includes('varying vec3 vKw'); if (!had) sh.vertexShader = sh.vertexShader.replace('void main() {', 'attribute float kidKeep;\nvarying vec3 vKw;\nvarying float vKk;\nvoid main() {\nvKk = kidKeep;\nvKw = (modelMatrix * vec4(position,1.0)).xyz;');
+          sh.fragmentShader = sh.fragmentShader.replace('void main() {', (had ? '' : 'varying vec3 vKw;\nvarying float vKk;\n') + 'void main() {\nif(vKk<0.5&&(' + cond + ')) discard;'); };
+        mt.customProgramCacheKey = function () { return (pk ? pk.call(this) : '') + '|md' + m.uuid; }; mt.needsUpdate = !0; });
+    });
+    // flat patch quads using a mesh's material; bake/color/uv fitted from nearby verts
+    const patch = (name, r, quads, sb) => {
+      const m = meshes(new RegExp('^' + name + '$'))[0]; if (!m) return;
+      const g = m.geometry, P = g.attributes.position, N = g.attributes.normal, UV = g.attributes.uv, B = g.attributes.bake, C = g.attributes.color;
+      const pos = [], nrm = [], uv = [], bk = [], col = [];
+      quads.forEach(({ c, n }) => {
+        // world corners & normal
+        const wc = c.map((p) => { const w = W(r, p[0], p[2]); return [w[0], p[1], w[1]]; }), wn = [n[0] * r.s, n[1], n[2] * r.s];
+        const sw = wbox(r, sb), S = [];
+        for (let v = 0; v < P.count; v++) { const x = P.getX(v), y = P.getY(v), z = P.getZ(v);
+          if (inB(sw, x, y, z) && N.getX(v) * wn[0] + N.getY(v) * wn[1] + N.getZ(v) * wn[2] > 0.9) S.push(v); }
+        const ax = Math.abs(wn[0]) > 0.5 ? [2, 1] : Math.abs(wn[1]) > 0.5 ? [0, 2] : [0, 1];
+        // least squares uv = a*u + b*v + c
+        const fit = (comp) => { let A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], y = [0, 0, 0];
+          S.forEach((v) => { const p = [P.getComponent(v, ax[0]), P.getComponent(v, ax[1]), 1], t = UV.getComponent(v, comp); for (let i = 0; i < 3; i++) { y[i] += p[i] * t; for (let j = 0; j < 3; j++) A[i][j] += p[i] * p[j]; } });
+          const det = (M) => M[0][0] * (M[1][1] * M[2][2] - M[1][2] * M[2][1]) - M[0][1] * (M[1][0] * M[2][2] - M[1][2] * M[2][0]) + M[0][2] * (M[1][0] * M[2][1] - M[1][1] * M[2][0]);
+          const D = det(A); if (Math.abs(D) < 1e-9) return [0, 0, S.length ? UV.getComponent(S[0], comp) : 0];
+          return [0, 1, 2].map((i) => det(A.map((row, ri) => row.map((e, ci) => (ci === i ? y[ri] : e)))) / D); };
+        const fu = UV ? fit(0) : null, fv = UV ? fit(1) : null;
+        const avg = (a) => [0, 1, 2].map((i) => { const v = S.map((q) => a.getComponent(q, i)).sort((x, y) => x - y); return v.length ? v[v.length >> 1] : 0.5; });
+        const ab = B ? avg(B) : null, ac = C ? avg(C) : null;
+        [0, 1, 2, 0, 2, 3].forEach((i) => { const p = wc[i]; pos.push(...p); nrm.push(...wn.map((q) => Math.round(q * 127)));
+          if (UV) { const u = [p[ax[0]], p[ax[1]], 1]; uv.push(fu[0] * u[0] + fu[1] * u[1] + fu[2], fv[0] * u[0] + fv[1] * u[1] + fv[2]); }
+          if (B) bk.push(...ab); if (C) col.push(...ac); });
+      });
+      const ng = new _t(); ng.setAttribute('position', new lt(new Float32Array(pos), 3)); ng.setAttribute('normal', new lt(new Int8Array(nrm), 3, !0));
+      if (UV) ng.setAttribute('uv', new lt(new Float32Array(uv), 2));
+      if (B) ng.setAttribute('bake', new lt(new B.array.constructor(bk.map((q) => Math.round(q * (B.normalized ? 65535 : 1)))), 3, B.normalized));
+      if (C) ng.setAttribute('color', new lt(new Float32Array(col), 3));
+      ng.setAttribute('kidKeep', new lt(new Float32Array(pos.length / 3).fill(1), 1)); const nm = new dt(ng, m.material); nm.name = name + '_mp'; nm.userData = m.userData; nm.receiveShadow = !0; it.add(nm);
+    };
+    // fix winding so face points along n: quad corners given CCW seen from n side
+    const qz = (x0, x1, y0, y1, z, nz) => ({ c: nz > 0 ? [[x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]] : [[x1, y0, z], [x0, y0, z], [x0, y1, z], [x1, y1, z]], n: [0, 0, nz] });
+    const qx = (x, y0, y1, z0, z1, nx) => ({ c: nx > 0 ? [[x, y0, z1], [x, y0, z0], [x, y1, z0], [x, y1, z1]] : [[x, y0, z0], [x, y0, z1], [x, y1, z1], [x, y1, z0]], n: [nx, 0, 0] });
+    const qy = (x0, x1, z0, z1, y) => ({ c: [[x0, y, z1], [x1, y, z1], [x1, y, z0], [x0, y, z0]], n: [0, 1, 0] });
+    const r0 = R[0], DZ = -1.17;
+    // ---------- shear detector (before) ----------
+    const triN = (P, I, k) => { const a = I[k] * 3, b = I[k + 1] * 3, c = I[k + 2] * 3; const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2], vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
+      const n = [uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx]; const L0 = Math.hypot(n[0], n[1], n[2]), L = L0 || 1; return [n[0] / L, n[1] / L, n[2] / L, L0 / 2]; };
+    const before = new Map(); meshes(/./).forEach((m) => { if (m.geometry.index) before.set(m, m.geometry.attributes.position.array.slice()); });
+    // ---------- vertex move rules (pure +z/-z translation) ----------
+    const EXC = /^(wall|bwall|skirting|molding|ceiling|downlight|cove|floor_oak.*|btile|ktile|rug|rug_living|rug2|door|dleaf_[oc]|dhw_[oc]|dmold_[oc]|frame|frost|curtain|sheer|facade|outdoor|soffit|balc_floor|c_.*|k(wall|furn|acc|bed|bed2)_.*|.*_kid.*|.*_mk|.*_mp)$/;
+    const inTV = (x, y, z) => x > 0.7 && x < 9.2 && z > 1.0 && z < 1.90 && y > -0.05 && y < 2.81;
+    const inBath = (x, z) => z > 1.99 && ((x > 4.0 && x < 5.97 && z < 3.95) || (x >= 5.97 && x < 8.735 && z < 3.30) || (x >= 8.735 && x < 9.235 && z < 2.5));
+    const F = (n, x, y, z) => {
+      if (y < -1) return 0;
+      if (n === 'glass') return (inTV(x, y, z) && y < 1.0) || (inBath(x, z) && x < 8.745 && y > 0 && y < 2.5) ? DZ : 0;
+      if (n === 'downlight') return (inBath(x, z) && y > 2.7) ? DZ : 0;
+      if (n === 'btile') return (x > 4.0 && x < 9.235 && z > 1.9 && z < 3.95) ? DZ : 0;
+      if (n === 'wall') return ((x > 2.12 && x < 9.215 && z > 1.99 && z <= 2.045) || (x > 4.0 && (x < 8.70 || (x < 8.745 && z < 3.19)) && z > 2.045 && z < 3.95)) ? DZ : 0;
+      if (n === 'bwall') return inBath(x, z) ? DZ : 0;
+      if (n === 'skirting') return ((x > 4.0 && x < 8.70 && z > 2.045 && z < 3.95) || (x > 2.2 && x < 8.70 && z > 1.995 && z < 2.075) || (x > 8.0 && x < 8.745 && z > 2.045 && z < 3.32) || (x > 4.0 && x < 6.2 && z > 2.045 && z < 4.05)) ? DZ : 0;
+      if (n === 'molding') return ((x > 3.9 && x < 8.70 && z > 2.045 && z < 3.95) || (x > 3.9 && x < 6.2 && z > 2.045 && z < 4.05) || (x > 8.0 && x < 8.745 && z > 2.045 && z < 3.32) || (x > 2.2 && x < 8.70 && z > 1.995 && z < 2.2)) ? DZ : 0;
+      if (/^(door|dleaf_[oc]|dhw_[oc]|dmold_[oc])$/.test(n)) return (x > 4.7 && x < 5.7 && z > 3.0 && z < 3.95) ? DZ : 0;
+      if (EXC.test(n)) return 0;
+      if (inTV(x, y, z)) return DZ;
+      if (inBath(x, z) && y > -0.05) return DZ;
+      return 0; };
+    const moved = [];
+    meshes(/./).forEach((m) => { if (!m.geometry.index) return; const P = m.geometry.attributes.position; let h = 0;
+      for (let v = 0; v < P.count; v++) { const d = F(m.name, P.getX(v), P.getY(v), P.getZ(v)); if (d) { P.setZ(v, P.getZ(v) + d); h++; } }
+      if (h) { P.needsUpdate = !0; m.geometry.computeBoundingSphere(); m.geometry.computeBoundingBox(); moved.push(m.name + ':' + h); } });
+    console.log('DBG step1 moved ' + moved.join(' '));
+    // ---------- old wall / living ceiling band / floors under the new master strip: exact shader cut ----------
+    addDisc(/^(wall|skirting|molding)$/, r0, [2.205, 9.215, -0.02, 2.81, 1.84, 2.045]);
+    addDisc(/^molding$/, r0, [2.205, 9.215, 2.4, 2.81, 1.55, 2.045]);
+    addDisc(/^(ceiling|downlight|cove)$/, r0, [2.205, 9.225, 2.40, 2.76, 0.70, 2.10]);
+    addDisc(/^floor_oak$/, r0, [2.205, 9.225, -0.01, 0.01, 0.85, 2.07]);
+    addDisc(/^bwall$/, r0, [8.715, 8.745, -0.02, 2.81, 1.25, 1.945]);          // tub-zone east wall removed -> bath reaches the frosted window
+    // ---------- new geometry (patch quads fitted to neighbouring surfaces: same material, uv, flat baked light) ----------
+    const qyd = (x0, x1, z0, z1, y) => ({ c: [[x0, y, z0], [x1, y, z0], [x1, y, z1], [x0, y, z1]], n: [0, -1, 0] });
+    const NW0 = 0.70, NW1 = 0.86;
+    patch('wall', r0, [qz(2.13, 9.22, 0, 2.80, NW0, -1)], [2.3, 4.8, 0.3, 2.4, 1.86, 1.88]);                          // new wall, living face
+    patch('wall', r0, [qz(2.21, 4.06, 0, 2.80, NW1, 1)], [2.25, 4.0, 0.3, 2.4, 2.02, 2.04]);                            // new wall, master corridor face
+    patch('wall', r0, [qx(2.13, 0, 2.80, NW0, 2.072, -1)], [2.12, 2.14, 0.3, 2.0, 2.82, 3.6]);                            // master west wall extension, hallway face
+    patch('skirting', r0, [qx(2.112, 0, 0.12, NW0 - 0.018, 1.87, -1)], [2.10, 2.12, 0.0, 0.12, 3.0, 6.4]);
+    patch('skirting', r0, [qz(2.21, 4.06, 0, 0.12, NW1 + 0.017, 1), qx(2.227, 0, 0.12, NW1, 2.03, 1)], [2.2, 4.0, 0.0, 0.12, 2.04, 2.07]);
+    patch('ceiling', r0, [qyd(2.13, 9.22, NW0, 2.06, 2.80)], [4.3, 8.5, 2.79, 2.81, 4.0, 6.0]);
+    // pocket at the frosted window: closing wall (bath tile face + bedroom face), floors
+    patch('bwall', r0, [qz(8.73, 9.22, 0, 2.80, 1.93, -1)], [6.1, 8.6, 0.3, 2.4, 1.92, 1.94]);
+    patch('wall', r0, [qz(8.73, 9.22, 0, 2.80, 2.01, 1)], [6.1, 8.6, 0.3, 2.4, 2.00, 2.02]);
+    patch('btile', r0, [qy(8.72, 9.22, 1.26, 1.94, 0.0015)], [4.2, 5.9, -0.01, 0.01, 1.0, 2.5]);
+    patch('floor_oak', r0, [qy(2.21, 4.07, 0.85, 2.075, 0.0015)], [4.3, 6.0, -0.01, 0.01, 3.95, 5.5]);                   // corridor strip
+    patch('floor_oak', r0, [qy(4.06, 6.06, 2.66, 3.885, 0.0015), qy(5.96, 8.745, 1.99, 3.19, 0.0015), qy(8.73, 9.22, 1.94, 2.45, 0.0015)], [4.3, 8.6, -0.01, 0.01, 3.95, 4.6]); // bedroom gains old bath area
+    applyDisc();
+    // ---------- light-map consistency for patches is flat by construction; nothing stale moved except rigid blocks ----------
+    // ---------- shear detector (after) ----------
+    before.forEach((P0, m) => { const P = m.geometry.attributes.position.array, n = P.length / 3; let any = 0; const kk = m.geometry.attributes.kidKeep ? m.geometry.attributes.kidKeep.array : new Float32Array(n); for (let i = 0; i < n; i++) if (P[i * 3 + 2] !== P0[i * 3 + 2]) { kk[i] = 1; any = 1; } if (any) { if (m.geometry.attributes.kidKeep) m.geometry.attributes.kidKeep.needsUpdate = !0; else m.geometry.setAttribute('kidKeep', new lt(kk, 1)); } });
+    let bad = []; before.forEach((P0, m) => { const P = m.geometry.attributes.position.array, I = m.geometry.index.array;
+      for (let k = 0; k < I.length; k += 3) { if (m.name === 'wall' && [0, 1, 2].every((j) => { const x = P0[I[k + j] * 3], z = P0[I[k + j] * 3 + 2]; return x > 2.12 && x < 2.14 && z > 1.80 && z < 2.05; }) || (m.name === 'wall' && [0, 1, 2].every((j) => { const x = P0[I[k + j] * 3]; return x > 2.12 && x < 2.14; }) && [0, 1, 2].some((j) => P0[I[k + j] * 3 + 2] !== P[I[k + j] * 3 + 2]) && Math.abs(triN(P0, I, k)[0]) > 0.9)) { I[k + 1] = I[k + 2] = I[k]; m.geometry.index.needsUpdate = !0; continue; } const a = triN(P0, I, k); if (a[3] < 1e-5) continue; const b = triN(P, I, k); if (Math.abs(a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) < 0.999) { if (m.name === 'wall' && Math.max(P0[I[k]*3], P0[I[k+1]*3], P0[I[k+2]*3]) > 9.1) { I[k+1] = I[k]; I[k+2] = I[k]; m.geometry.index.needsUpdate = true; continue; } if (bad.length < 40) bad.push(m.name + '@' + [0,1,2].map((j) => [P0[I[k+j] * 3], P0[I[k+j] * 3 + 1], P0[I[k+j] * 3 + 2]].map((q) => q.toFixed(2)).join(',') + (P0[I[k+j]*3+2] !== P[I[k+j]*3+2] ? 'M' : '')).join('|')); else bad.push(1); } } });
+    console.log('DBG step1 sheared ' + bad.length + ' ' + bad.filter((q) => q !== 1).join(' '));
+    // projector picture plane created later at Ut(c1)
+    c1 = c1 + DZ / zt;
+    // ---------- viewpoints ----------
+    const dz = DZ / zt, sv = (id, e, l) => { const v = cl.find((q) => q.id === id); if (!v) return; if (v.eye) v.eye[1] += e; if (v.look) v.look[1] += l; };
+    const sz = (id, ez) => { const v = cl.find((q) => q.id === id); if (v && v.eye) v.eye[1] = ez / zt + Bi; };
+    sv('tvwall', 0, dz); sv('seatview', 0, dz); sv('sofa', dz, 0); sz('living', 0.35); sz('great', 0.30); sv('screen', 0, dz); sv('screensofa', 0, dz);
+    sv('mtv', 0, dz); sv('mbath', dz, dz); sv('mbath2', dz, dz); sv('mbath3', dz, dz);
+    window.__cam = Be;
+    const fixMir = () => Wh.forEach((o) => { if (o.__mv) return; const q = o.position; if (q.x > 4.0 && q.x < 9.235 && q.z > 1.99 && q.z < 3.95 && q.y > 0.3) { q.z += DZ; o.__mv = 1; o.updateMatrixWorld(); console.log('DBG mirror moved ' + q.x.toFixed(2) + ',' + q.z.toFixed(2)); } else o.__mv = 1; });
+    window.__Wh = Wh; fixMir(); { let c = 0; const iv = setInterval(() => { fixMir(); if (++c > 600) clearInterval(iv); }, 200); }
+    console.log('DBG master ok');
+  } catch (e) { console.error('DBG master failed', e); }
 }
