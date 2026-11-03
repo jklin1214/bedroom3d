@@ -9763,7 +9763,7 @@ function __master() {
     patch('wall', r0, [qz(2.13, 9.22, 0, 2.80, NW0, -1)], [2.3, 4.8, 0.3, 2.4, 1.86, 1.88]);                          // new wall, living face
     patch('wall', r0, [qz(2.21, 4.06, 0, 2.80, NW1, 1)], [2.25, 4.0, 0.3, 2.4, 2.02, 2.04]);                            // new wall, master corridor face
     patch('wall', r0, [qx(2.13, 0, 2.80, NW0, 2.072, -1)], [2.12, 2.14, 0.3, 2.0, 2.82, 3.6]);                            // master west wall extension, hallway face
-    patch('skirting', r0, [qx(2.112, 0, 0.12, NW0 - 0.018, 2.072, -1), qx(2.112, 0, 0.12, NW0 - 0.018, 2.072, 1), qy(2.112, 2.13, NW0 - 0.018, 2.072, 0.12)], [2.08, 2.135, 0.0, 0.12, 2.82, 3.6]);
+    patch('skirting', r0, [qx(2.112, 0, 0.12, NW0 - 0.018, 2.072, -1), qx(2.112, 0, 0.12, NW0 - 0.018, 2.072, 1), qy(2.112, 2.13, NW0 - 0.018, 2.072, 0.12)], [0.5, 2.2, 0.0, 0.13, 2.0, 9.0]);
     patch('molding', r0, [qx(2.09, 2.48, 2.58, NW0 - 0.04, 2.072, -1), qx(2.09, 2.48, 2.58, NW0 - 0.04, 2.072, 1), qyd(2.09, 2.13, NW0 - 0.04, 2.072, 2.48)], [1.9, 2.14, 2.45, 2.81, 2.0, 9.0]);
     patch('skirting', r0, [qz(2.21, 4.06, 0, 0.12, NW1 + 0.017, 1), qx(2.227, 0, 0.12, NW1, 2.03, 1)], [2.2, 4.0, 0.0, 0.12, 2.04, 2.07]);
     patch('ceiling', r0, [qyd(2.13, 9.22, NW0, 2.06, 2.80)], [4.3, 8.5, 2.79, 2.81, 4.0, 6.0]);
@@ -9791,11 +9791,24 @@ function __master() {
     const fixMir = () => Wh.forEach((o) => { if (o.__mv) return; const q = o.position; if (q.x > 4.0 && q.x < 9.235 && q.z > 1.99 && q.z < 3.95 && q.y > 0.3) { q.z += DZ; o.__mv = 1; o.updateMatrixWorld(); console.log('DBG mirror moved ' + q.x.toFixed(2) + ',' + q.z.toFixed(2)); } else o.__mv = 1; });
     { const bm = new Kt({ color: 0xe9e5dd }); const tube = new dt(new sr(0.035, 0.035, 0.66, 20), bm); tube.rotation.x = Math.PI / 2; tube.position.set(9.245, 2.47, 1.53); it.add(tube);
       const sh = new dt(new an(0.006, 0.42, 0.66), bm); sh.position.set(9.255, 2.24, 1.53); it.add(sh); const bar = new dt(new an(0.016, 0.025, 0.67), new Kt({ color: 0xb9a27a })); bar.position.set(9.255, 2.03, 1.53); it.add(bar); }
-    it.children.forEach((c) => { if (/^(skirting|molding)_mp$/.test(c.name) && c.geometry.attributes.position.array[0] < 2.2 && c.geometry.attributes.bake) { const a = c.geometry.attributes.bake.array; if (a[0]) { for (let i = 0; i < a.length; i++) a[i] = Math.min(65535, a[i] * 1.35); c.geometry.attributes.bake.needsUpdate = !0; } } });
+    it.children.forEach((c) => { if (/^molding_mp$/.test(c.name) && c.geometry.attributes.position.array[0] < 2.2 && c.geometry.attributes.bake) { const a = c.geometry.attributes.bake.array; if (a[0]) { for (let i = 0; i < a.length; i++) a[i] = Math.min(65535, a[i] * 1.35); c.geometry.attributes.bake.needsUpdate = !0; } } });
     { const sk = it.children.find((c) => c.name === 'skirting_mp' && c.geometry.attributes.bake), mo = it.children.find((c) => c.name === 'molding_mp' && c.geometry.attributes.bake && c.geometry.attributes.bake.array[0] === 0); if (sk && mo) { const a = mo.geometry.attributes.bake.array, b = sk.geometry.attributes.bake.array; for (let i = 0; i < a.length; i++) a[i] = Math.min(65535, b[i % 3] * 1.15); mo.geometry.attributes.bake.needsUpdate = !0; } }
     { const src = {}; it.children.forEach((c) => { if (c.isMesh && !/_/.test(c.name)) src[c.name] = src[c.name] || c; }); const mp = it.children.filter((c) => c.isMesh && /_mp$/.test(c.name)); setInterval(() => mp.forEach((c) => { const o = src[c.name.slice(0, -3)]; if (o && c.visible !== o.visible) { c.visible = o.visible; ei = Math.max(ei, 2); } }), 300); }
     it.children.forEach((c) => { if (c.isMesh && c.name === 'frost') { const b = new c.geometry.constructor(); c.geometry.computeBoundingBox(); const bb = c.geometry.boundingBox; if (bb.min.x > 9.2 && bb.max.z < 1.95) c.material = new Kt({ color: 0xe6eaec, transparent: !0, opacity: 0.95 }); const fm = c.material; let ln = null; setInterval(() => { if (ln !== He) { ln = He; fm.color.setHex(He ? 0x4a5058 : 0xe6eaec); ei = Math.max(ei, 2); } }, 300); } });
     window.__Wh = Wh; fixMir(); { let c = 0; const iv = setInterval(() => { fixMir(); if (++c > 600) clearInterval(iv); }, 200); }
+
+    // ===== STEP 2: projector screen -> max 16:9 touching the floor =====
+    { const K = o1 / (o1 - 0.30), cx = It((Uf + Nf) / 2); let cnt = 0, cs = 0;
+      it.children.forEach((m) => { if (!m.isMesh || !/^scr_(fabric|dark)$/.test(m.name)) return; const P = m.geometry.attributes.position;
+        for (let v = 0; v < P.count; v++) { P.setX(v, cx + (P.getX(v) - cx) * K); P.setY(v, o1 - (o1 - P.getY(v)) * K); cnt++; } P.needsUpdate = !0; m.geometry.computeBoundingBox(); m.geometry.computeBoundingSphere(); });
+      it.children.forEach((m) => { if (!m.isMesh || m.name !== 'dark') return; const P = m.geometry.attributes.position; let h = 0;
+        for (let v = 0; v < P.count; v++) { const x = P.getX(v), y = P.getY(v), z = P.getZ(v); if (x > 0.70 && x < 4.85 && y > 2.45 && y < 2.65 && z > 0.40 && z < 0.66) { P.setX(v, cx + (x - cx) * K); h++; } }
+        if (h) { P.needsUpdate = !0; m.geometry.computeBoundingSphere(); cs += h; } });
+      const hw = (Nf - Uf) / 2 * K; Uf = (Uf + Nf) / 2 - hw; Nf = Uf + 2 * hw;
+      fs = o1 - (o1 - fs) * K; ur = o1 - (o1 - ur) * K; l1 = l1 * K;
+      console.log('DBG step2 K=' + K.toFixed(4) + ' pic ' + ((Nf - Uf) * zt).toFixed(3) + 'x' + (ur - fs).toFixed(3) + ' fs ' + fs.toFixed(3) + ' ur ' + ur.toFixed(3) + ' x ' + It(Uf).toFixed(3) + '..' + It(Nf).toFixed(3) + ' scrV ' + cnt + ' caseV ' + cs);
+      const _bl = bl; bl = function (i) { const r = _bl.apply(this, arguments); const on = i > 0.002; if (vt.pj) vt.pj.layers.set(vt.pj.visible ? 0 : 31); vt.scr.forEach((t) => t.mesh.layers.set(on ? 0 : 31)); return r; };
+    }
     console.log('DBG master ok');
   } catch (e) { console.error('DBG master failed', e); }
 }
