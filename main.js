@@ -8237,7 +8237,7 @@ async function $y() {
       U.name === "outdoor" && (Gf.push(ee), (ee.visible = !He)),
       it.add(ee));
   }
-  (__mods(), sp(Pt, a), Zh(), Hy().catch((U) => console.error("tv", U)), Ky(), h1());
+  (__mods(), __kids(), sp(Pt, a), Zh(), Hy().catch((U) => console.error("tv", U)), Ky(), h1());
   let P = nt.floor,
     R = document.createElement("canvas");
   ((R.width = 768), (R.height = 512));
@@ -9404,6 +9404,7 @@ body.annot .dock,body.annot #hint{visibility:hidden}`;
   bar.appendChild(Object.assign(document.createElement('div'),{className:'sep'}));
   mk('💾 儲存圖片',()=>save());
   mk('📍 複製視角',()=>copyView());
+  mk('🖼️ 顯示圖片',()=>showImg());
   mk('✅ 完成/離開',()=>setOn(false));
   function sync(){cBtns.forEach(b=>b.classList.toggle('sel',b.dataset.v===S.color));wBtns.forEach(b=>b.classList.toggle('sel',+b.dataset.v===S.w));tBtns.forEach(b=>b.classList.toggle('sel',b.dataset.v===S.tool));}
   sync();
@@ -9440,8 +9441,7 @@ body.annot .dock,body.annot #hint{visibility:hidden}`;
   let capRes=null;const _r=Es.render.bind(Es);
   Es.render=function(...a){const r=_r(...a);if(capRes){const f=capRes;capRes=null;try{const g=Ge.domElement,o=document.createElement('canvas');o.width=g.width;o.height=g.height;o.getContext('2d').drawImage(g,0,0);f(o);}catch(e){f(null);}}return r;};
   function grab(){return new Promise(res=>{capRes=res;ei=Math.max(ei,2);setTimeout(()=>{if(capRes===res){capRes=null;res(null);}},8000);});}
-  async function save(){
-    showToast('產生圖片中…',8000);
+  async function makeImg(){
     const g=await grab();const W=Math.round(innerWidth*dpr),H=Math.round(innerHeight*dpr);
     const o=document.createElement('canvas');o.width=W;o.height=H;const c=o.getContext('2d');
     c.fillStyle='#ddd';c.fillRect(0,0,W,H);if(g)c.drawImage(g,0,0,W,H);
@@ -9449,14 +9449,36 @@ body.annot .dock,body.annot #hint{visibility:hidden}`;
     const cap=info()+'  '+new Date().toLocaleString('zh-TW',{hour12:false}),fs=13*dpr;
     c.font=`500 ${fs}px "Noto Sans TC",sans-serif`;const tw=c.measureText(cap).width;
     c.fillStyle='rgba(0,0,0,.6)';c.fillRect(8*dpr,H-fs-18*dpr,tw+14*dpr,fs+10*dpr);c.fillStyle='#fff';c.textBaseline='middle';c.fillText(cap,15*dpr,H-fs/2-13*dpr);
-    const blob=await new Promise(r=>o.toBlob(r,'image/png'));
-    const name='標註_'+info().replace(/[\\/:*?"<>|・\s]+/g,'_')+'.png';
-    window.__annotLast=o;
-    try{const file=new File([blob],name,{type:'image/png'});
-      if(navigator.canShare&&navigator.canShare({files:[file]})){toast.style.display='none';await navigator.share({files:[file],title:'3D 標註',text:viewCode()});return;}}catch(e){if(e&&e.name==='AbortError'){toast.style.display='none';return;}}
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);
-    showToast(g?'圖片已下載':'圖片已下載（3D 畫面擷取失敗，只有標註）');
+    let blob=await new Promise(r=>o.toBlob(r,'image/png'));
+    if(!blob||!blob.size){const d=o.toDataURL('image/png'),bin=atob(d.split(',')[1]),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);blob=new Blob([u],{type:'image/png'});}
+    const name='annot_'+new Date().toISOString().replace(/[-:T]/g,'').slice(0,14)+'.png';
+    const file=new File([blob],name,{type:'image/png',lastModified:Date.now()});
+    window.__annotLast=o;return {blob,name,file,ok:!!g};
   }
+  function download(im){const a=document.createElement('a');a.href=URL.createObjectURL(im.blob);a.download=im.name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},60000);}
+  const canFiles=(f)=>{try{return !!(navigator.share&&navigator.canShare&&navigator.canShare({files:[f]}));}catch(e){return false;}};
+  function overlay(im){
+    let ov=document.getElementById('anOv');if(ov)ov.remove();
+    ov=document.createElement('div');ov.id='anOv';ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;box-sizing:border-box';
+    const tip=document.createElement('div');tip.textContent='長按圖片 → 儲存到相簿，再從聊天室上傳';tip.style.cssText='color:#fff;font:600 16px "Noto Sans TC",sans-serif;text-align:center';
+    const img=document.createElement('img');img.src=URL.createObjectURL(im.blob);img.alt=im.name;img.style.cssText='max-width:100%;max-height:72vh;object-fit:contain;border-radius:6px;-webkit-touch-callout:default;user-select:auto';
+    const row=document.createElement('div');row.style.cssText='display:flex;gap:10px';
+    const bt=(t,f)=>{const b=document.createElement('button');b.textContent=t;b.style.cssText='font:600 15px sans-serif;padding:10px 16px;border-radius:20px;border:0;background:#fff;color:#222';b.onclick=f;row.appendChild(b);};
+    if(canFiles(im.file))bt('📤 分享圖片',async()=>{try{await navigator.share({files:[im.file]});}catch(e){}});
+    bt('⬇️ 下載',()=>download(im));
+    bt('✕ 關閉',()=>{URL.revokeObjectURL(img.src);ov.remove();});
+    ov.append(tip,img,row);document.body.appendChild(ov);
+  }
+  async function save(){
+    showToast('產生圖片中…',8000);
+    const im=await makeImg();toast.style.display='none';
+    if(canFiles(im.file)){
+      try{await navigator.share({files:[im.file]});return;}
+      catch(e){if(e&&e.name==='AbortError')return; overlay(im);return;} // e.g. gesture expired: overlay has a share button
+    }
+    overlay(im);download(im);
+  }
+  async function showImg(){showToast('產生圖片中…',8000);const im=await makeImg();toast.style.display='none';overlay(im);}
 })();
 
 // ===== White TV wall (白色系電視牆) =====
@@ -9472,3 +9494,139 @@ body.annot .dock,body.annot #hint{visibility:hidden}`;
   const h=setInterval(()=>{ if(run()>0 && it.getObjectByName('slats_mod')){ clearInterval(h); ei=Math.max(ei,2); } },700);
   setTimeout(()=>clearInterval(h),180000);
 })();
+
+// ===== Kids rooms: wardrobe to door wall, door moved, desk to west wall =====
+function __kids() {
+  try {
+    const R = [ // local(room1) -> world
+      { s: 1, ox: 0, oz: 0 }, { s: 1, ox: 2.419, oz: 0 },
+      { s: -1, ox: -2.911, oz: 0.984 }, { s: -1, ox: -0.492, oz: 0.984 }];
+    const W = (r, x, z) => [r.ox + r.s * x, r.oz + r.s * z];
+    const L = (r, x, z) => [r.s * (x - r.ox), r.s * (z - r.oz)];
+    const meshes = (re) => it.children.filter((c) => c.isMesh && !c.isInstancedMesh && re.test(c.name));
+    const inB = (b, x, y, z) => x >= b[0] && x <= b[1] && y >= b[2] && y <= b[3] && z >= b[4] && z <= b[5];
+    const wbox = (r, b) => { const a = W(r, b[0], b[4]), c = W(r, b[1], b[5]); return [Math.min(a[0], c[0]), Math.max(a[0], c[0]), b[2], b[3], Math.min(a[1], c[1]), Math.max(a[1], c[1])]; };
+    // in-place vertex transform (local coords), positions + normals
+    const xformVerts = (re, r, b, f) => meshes(re).forEach((m) => {
+      const P = m.geometry.attributes.position, N = m.geometry.attributes.normal; let hit = 0;
+      for (let v = 0; v < P.count; v++) {
+        const [lx, lz] = L(r, P.getX(v), P.getZ(v)), y = P.getY(v);
+        if (!inB(b, lx, y, lz)) continue;
+        const o = f(lx, y, lz, N.getX(v) * r.s, N.getZ(v) * r.s); const w = W(r, o[0], o[2]);
+        P.setXYZ(v, w[0], o[1], w[1]); if (o[3] !== undefined) N.setXYZ(v, o[3] * r.s, N.getY(v), o[4] * r.s); hit++;
+      }
+      if (hit) { P.needsUpdate = N.needsUpdate = !0; m.geometry.computeBoundingSphere(); m.geometry.computeBoundingBox(); }
+    });
+    // remove triangles with centroid in local box
+    const dropTris = (re, r, b) => meshes(re).forEach((m) => {
+      const g = m.geometry, I = g.index.array, P = g.attributes.position.array, out = [];
+      for (let k = 0; k < I.length; k += 3) { let cx = 0, cy = 0, cz = 0; for (let q = 0; q < 3; q++) { cx += P[I[k + q] * 3] / 3; cy += P[I[k + q] * 3 + 1] / 3; cz += P[I[k + q] * 3 + 2] / 3; }
+        const [lx, lz] = L(r, cx, cz); if (!inB(b, lx, cy, lz)) out.push(I[k], I[k + 1], I[k + 2]); }
+      if (out.length < I.length) g.setIndex(new lt(new I.constructor(out), 1));
+    });
+    // clone triangles with centroid in local box, transformed (bake refreshed on light switch)
+    const clones = [];
+    const cloneRegion = (re, r, b, f) => meshes(re).forEach((m) => {
+      const g = m.geometry, idx = g.index.array, P = g.attributes.position.array, out = [];
+      for (let k = 0; k < idx.length; k += 3) { let cx = 0, cy = 0, cz = 0; for (let q = 0; q < 3; q++) { cx += P[idx[k + q] * 3] / 3; cy += P[idx[k + q] * 3 + 1] / 3; cz += P[idx[k + q] * 3 + 2] / 3; }
+        const [lx, lz] = L(r, cx, cz); if (inB(b, lx, cy, lz)) out.push(idx[k], idx[k + 1], idx[k + 2]); }
+      if (!out.length) return;
+      const ng = new _t();
+      for (const key in g.attributes) { const a = g.attributes[key], s = a.itemSize, arr = new a.array.constructor(out.length * s);
+        out.forEach((vi, j) => { for (let c = 0; c < s; c++) arr[j * s + c] = a.array[vi * s + c]; });
+        if (key === 'position') for (let j = 0; j < out.length; j++) { const [lx, lz] = L(r, arr[j * 3], arr[j * 3 + 2]); const o = f(lx, arr[j * 3 + 1], lz); const w = W(r, o[0], o[2]); arr[j * 3] = w[0]; arr[j * 3 + 1] = o[1]; arr[j * 3 + 2] = w[1]; }
+        ng.setAttribute(key, new lt(arr, s, a.normalized)); }
+      ng.setAttribute('kidKeep', new lt(new Float32Array(out.length).fill(1), 1)); const nm = new dt(ng, m.material); nm.name = m.name + '_kid'; nm.userData = m.userData; nm.castShadow = nm.receiveShadow = !0; it.add(nm);
+      clones.push({ src: g, dst: ng, map: out });
+    });
+    // world-box discard on materials (exact rectangular cuts)
+    const disc = {};
+    const addDisc = (re, r, b) => meshes(re).forEach((m0) => { [m0].concat(it.children.filter((c) => c.isMesh && c !== m0 && c.userData && c.userData.name === m0.name && c.material && c.material.isShaderMaterial)).forEach((m) => { const k = m.uuid; (disc[k] = disc[k] || { m, boxes: [] }).boxes.push(wbox(r, b)); }); });
+    const applyDisc = () => Object.values(disc).forEach(({ m, boxes }) => {
+      const cond = boxes.map((b) => `(vKw.x>${b[0].toFixed(4)}&&vKw.x<${b[1].toFixed(4)}&&vKw.y>${b[2].toFixed(4)}&&vKw.y<${b[3].toFixed(4)}&&vKw.z>${b[4].toFixed(4)}&&vKw.z<${b[5].toFixed(4)})`).join('||');
+      new Set([m.material, m.userData.base, m.userData.cap].filter(Boolean)).forEach((mt) => {
+        if (mt.__kd) return; mt.__kd = 1; const prev = mt.onBeforeCompile, pk = mt.customProgramCacheKey;
+        mt.onBeforeCompile = (sh, rr) => { prev && prev.call(mt, sh, rr);
+          sh.vertexShader = sh.vertexShader.replace('void main() {', 'attribute float kidKeep;\nvarying vec3 vKw;\nvarying float vKk;\nvoid main() {\nvKk = kidKeep;\nvKw = (modelMatrix * vec4(position,1.0)).xyz;');
+          sh.fragmentShader = sh.fragmentShader.replace('void main() {', 'varying vec3 vKw;\nvarying float vKk;\nvoid main() {\nif(vKk<0.5&&(' + cond + ')) discard;'); };
+        mt.customProgramCacheKey = function () { return (pk ? pk.call(this) : '') + '|kd' + m.uuid; }; mt.needsUpdate = !0; });
+    });
+    // flat patch quads using a mesh's material; bake/color/uv fitted from nearby verts
+    const patch = (name, r, quads, sb) => {
+      const m = meshes(new RegExp('^' + name + '$'))[0]; if (!m) return;
+      const g = m.geometry, P = g.attributes.position, N = g.attributes.normal, UV = g.attributes.uv, B = g.attributes.bake, C = g.attributes.color;
+      const pos = [], nrm = [], uv = [], bk = [], col = [];
+      quads.forEach(({ c, n }) => {
+        // world corners & normal
+        const wc = c.map((p) => { const w = W(r, p[0], p[2]); return [w[0], p[1], w[1]]; }), wn = [n[0] * r.s, n[1], n[2] * r.s];
+        const sw = wbox(r, sb), S = [];
+        for (let v = 0; v < P.count; v++) { const x = P.getX(v), y = P.getY(v), z = P.getZ(v);
+          if (inB(sw, x, y, z) && N.getX(v) * wn[0] + N.getY(v) * wn[1] + N.getZ(v) * wn[2] > 0.9) S.push(v); }
+        const ax = Math.abs(wn[0]) > 0.5 ? [2, 1] : Math.abs(wn[1]) > 0.5 ? [0, 2] : [0, 1];
+        // least squares uv = a*u + b*v + c
+        const fit = (comp) => { let A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], y = [0, 0, 0];
+          S.forEach((v) => { const p = [P.getComponent(v, ax[0]), P.getComponent(v, ax[1]), 1], t = UV.getComponent(v, comp); for (let i = 0; i < 3; i++) { y[i] += p[i] * t; for (let j = 0; j < 3; j++) A[i][j] += p[i] * p[j]; } });
+          const det = (M) => M[0][0] * (M[1][1] * M[2][2] - M[1][2] * M[2][1]) - M[0][1] * (M[1][0] * M[2][2] - M[1][2] * M[2][0]) + M[0][2] * (M[1][0] * M[2][1] - M[1][1] * M[2][0]);
+          const D = det(A); if (Math.abs(D) < 1e-9) return [0, 0, S.length ? UV.getComponent(S[0], comp) : 0];
+          return [0, 1, 2].map((i) => det(A.map((row, ri) => row.map((e, ci) => (ci === i ? y[ri] : e)))) / D); };
+        const fu = UV ? fit(0) : null, fv = UV ? fit(1) : null;
+        const avg = (a) => [0, 1, 2].map((i) => { const v = S.map((q) => a.getComponent(q, i)).sort((x, y) => x - y); return v.length ? v[v.length >> 1] : 0.5; });
+        const ab = B ? avg(B) : null, ac = C ? avg(C) : null;
+        [0, 1, 2, 0, 2, 3].forEach((i) => { const p = wc[i]; pos.push(...p); nrm.push(...wn.map((q) => Math.round(q * 127)));
+          if (UV) { const u = [p[ax[0]], p[ax[1]], 1]; uv.push(fu[0] * u[0] + fu[1] * u[1] + fu[2], fv[0] * u[0] + fv[1] * u[1] + fv[2]); }
+          if (B) bk.push(...ab); if (C) col.push(...ac); });
+      });
+      const ng = new _t(); ng.setAttribute('position', new lt(new Float32Array(pos), 3)); ng.setAttribute('normal', new lt(new Int8Array(nrm), 3, !0));
+      if (UV) ng.setAttribute('uv', new lt(new Float32Array(uv), 2));
+      if (B) ng.setAttribute('bake', new lt(new B.array.constructor(bk.map((q) => Math.round(q * (B.normalized ? 65535 : 1)))), 3, B.normalized));
+      if (C) ng.setAttribute('color', new lt(new Float32Array(col), 3));
+      ng.setAttribute('kidKeep', new lt(new Float32Array(pos.length / 3).fill(1), 1)); const nm = new dt(ng, m.material); nm.name = name + '_kidp'; nm.userData = m.userData; nm.receiveShadow = !0; it.add(nm);
+    };
+    // fix winding so face points along n: quad corners given CCW seen from n side
+    const qz = (x0, x1, y0, y1, z, nz) => ({ c: nz > 0 ? [[x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]] : [[x1, y0, z], [x0, y0, z], [x0, y1, z], [x1, y1, z]], n: [0, 0, nz] });
+    const qx = (x, y0, y1, z0, z1, nx) => ({ c: nx > 0 ? [[x, y0, z1], [x, y0, z0], [x, y1, z0], [x, y1, z1]] : [[x, y0, z0], [x, y0, z1], [x, y1, z1], [x, y1, z0]], n: [nx, 0, 0] });
+    const qy = (x0, x1, z0, z1, y) => ({ c: [[x0, y, z1], [x1, y, z1], [x1, y, z0], [x0, y, z0]], n: [0, 1, 0] });
+
+    const DX = -0.42;                       // door shift along door wall (local -x)
+    const NX0 = -1.126 + DX, NX1 = -0.268 + DX; // new frame extents
+    const ZR = -2.481, ZH = -2.398;          // wall faces (room / hall)
+    const WZ = -2.505;                        // wardrobe end
+    const sc = (WZ + 4.059) / (-4.059 + 5.576);
+    R.forEach((r, ri) => {
+      // 1) wardrobe extension (clone the 3-module run toward the door wall)
+      const wb = [-0.80, -0.28, -0.01, 2.81, -5.585, -4.05];
+      cloneRegion(/^(kfurn_[a-z]|dark|brass)$/, r, wb, (x, y, z) => [x, y, -4.059 + (z + 5.576) * sc]);
+      cloneRegion(/^molding$/, r, [-0.80, -0.28, 2.6, 2.81, -5.585, -4.05], (x, y, z) => [x, y, -4.059 + (z + 5.576) * sc]);
+      addDisc(/^molding$/, r, [-0.745, -0.28, 2.6, 2.81, -4.06, -2.40]);
+      dropTris(/^metal$/, r, [-0.46, -0.28, 0.9, 1.1, -2.77, -2.58]); // old door stop, now inside wardrobe
+      // 2) move door frame / leaves / hardware / mouldings
+      xformVerts(/^(door|dleaf_[oc]|dhw_[oc]|dmold_[oc])$/, r, [-1.13, -0.26, -0.02, 2.2, -3.25, -2.36], (x, y, z, nx, nz) => [x + DX, y, z, nx, nz]);
+      xformVerts(/^cabinet$/, r, [-1.40, -1.10, 0.3, 1.25, -2.492, -2.478], (x, y, z) => [x - 0.47, y, z]); // light switch
+      // 3) wall: cut new opening, rebuild old opening segment
+      const cutN = [NX0, NX1, -0.02, 2.161, -2.40 - 0.1, -2.36];
+      const fill = [NX1, -0.268, -0.02, 2.161, ZR - 0.0005, -2.36];
+      addDisc(/^(wall|kwall_[a-z]|skirting)$/, r, [NX0, NX1, -0.02, 2.161, ZR - 0.02, -2.36]);
+      addDisc(/^(wall|kwall_[a-z]|skirting)$/, r, fill);
+      addDisc(/^molding$/, r, [-1.83, NX1, 0.15, 2.45, -2.40, -2.36]);   // hall wainscot panel cut by the door
+      patch('wall', r, [qz(NX1, -0.268, 0, 2.161, ZH, 1)], [NX0 - 0.45, NX0 - 0.02, 0.5, 2.0, -2.40, -2.39]);
+      patch('kwall_' + ['g', 'b', 'v', 'p'][ri], r, [qz(NX1, -0.287, 0, 2.161, ZR, -1)], [-2.6, -0.3, 0.3, 2.5, -2.49, -2.47]);
+      patch('skirting', r, [qz(NX1, -0.268, 0, 0.12, -2.382, 1), qy(NX1, -0.268, -2.398, -2.382, 0.12)], [-2.0, 0.3, 0.0, 0.13, -2.40, -2.37]);
+      patch('floor_oak', r, [qy(NX0, -1.066, ZR, ZH, 0.0)], [-1.07, -0.3, -0.01, 0.01, -2.49, -2.39]);
+      // 4) desk + shelves + chair + lamp rotated onto the west wall (left on entry)
+      xformVerts(/^(kfurn_[a-z]|books|metal|task_fabric|steel)$/, r, [-2.62, -1.29, -0.01, 2.785, -3.76, -2.478],
+        (x, y, z, nx, nz) => [-5.102 - z, y, x - 1.208, -nz, nx]);
+    });
+    // fix kfurn suffix per room: patch() picked by index; verify quickly
+    applyDisc();
+    // keep cloned bake in sync with day/night & style switches
+    const syncBake = () => clones.forEach(({ src, dst, map }) => { const a = src.attributes.bake, b = dst.attributes.bake; if (!a || !b) return; map.forEach((vi, j) => { b.array[j * 3] = a.array[vi * 3]; b.array[j * 3 + 1] = a.array[vi * 3 + 1]; b.array[j * 3 + 2] = a.array[vi * 3 + 2]; }); b.needsUpdate = !0; });
+    const _Fy = Fy; Fy = function (...a) { const o = _Fy.apply(this, a); syncBake(); return o; };
+    // viewpoints: stand just inside the new doors, looking in
+    const px = (x) => x / zt + Oi, pz = (z) => z / zt + Bi;
+    ['kids1', 'kids2', 'kids3', 'kids4'].forEach((id, ri) => { const v = cl.find((q) => q.id === id); if (!v) return; const r = R[ri];
+      const e = W(r, (NX0 + NX1) / 2 + 0.05, -2.62), t = W(r, -1.45, -4.9); v.eye = [px(e[0]), pz(e[1]), 1.62]; v.look = [px(t[0]), pz(t[1]), 0.85]; });
+    window.__it = it; window.__ray = (x, y) => { Ff.setFromCamera({ x, y }, Be); return Ff.intersectObjects(it.children, !0).slice(0, 8).map((h) => [h.object.name, +h.point.x.toFixed(3), +h.point.y.toFixed(2), +h.point.z.toFixed(3)]); }; window.__kick = () => { ei = Math.max(ei, 4); };
+    window.__setView = (p, t, f) => { Be.position.set(...p); at.target.set(...t); if (f) { Be.fov = f; Be.updateProjectionMatrix(); } at.update(); ei = Math.max(ei, 3); };
+    console.log('DBG kids ok');
+  } catch (e) { console.error('DBG kids failed', e); }
+}
