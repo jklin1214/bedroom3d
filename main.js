@@ -9761,6 +9761,8 @@ function __master() {
     const nPre = it.children.length;
     patch('floor_oak', r0, [qy(-2.62, 2.13, -2.50, -2.37, 0.002), qy(-0.31, -0.18, -5.66, -2.48, 0.002), qy(-2.73, -2.60, -5.66, -2.39, 0.002), qy(-3.62, -2.70, -3.645, -3.54, 0.002), qy(-3.61, -2.70, -5.66, -3.63, 0.001)], [-2.0, -0.8, -0.01, 0.01, -4.0, -3.0]);
     patch('floor_oak', r0, [qy(2.11, 2.58, -5.66, -2.39, 0.002)], [3.0, 4.0, -0.01, 0.01, -3.6, -2.7]);
+    patch('wall', r0, [qz(2.10, 2.63, 0, 2.80, -5.658, 1)], [2.66, 3.40, 0.3, 2.4, -5.675, -5.645]);   // play mode: living top wall behind removed bookcase
+    it.children.slice(nPre).forEach((pf) => { if (pf.name === 'wall_mp') { pf.name = 'play_floor'; pf.visible = !1; } });
     it.children.slice(nPre).forEach((pf) => { if (pf.name === 'floor_oak_mp') { pf.name = 'play_floor'; pf.visible = !1; } });
     // ---- baked-light fixes for moved/stretched surfaces (re-applied after every lightmap switch) ----
     const BF = [];
@@ -9798,7 +9800,7 @@ function __play() {
     const U = { value: 0 };
     const BOX = [[-2.605, 2.115, -0.02, 2.79, -5.60, -2.49], [-0.305, -0.185, -0.02, 2.79, -5.665, -2.38], [-2.62, 2.13, -0.02, 2.79, -2.495, -2.355], [-2.725, -2.60, -0.02, 2.79, -5.655, -2.385], [-3.605, -2.70, -0.02, 2.79, -5.655, -3.54], [2.10, 2.60, -0.02, 2.79, -5.655, -2.385], [2.55, 3.385, -0.02, 1.0, -5.40, -4.48]];
     const cond = BOX.map((b) => `(vPw.x>${b[0]}&&vPw.x<${b[1]}&&vPw.y>${b[2]}&&vPw.y<${b[3]}&&vPw.z>${b[4]}&&vPw.z<${b[5]})`).join('||');
-    const SKIP = /^(floor_oak.*|ktile|rug2|ceiling|downlight|glass|frame|sheer|curtain|facade|outdoor|c_.*|cove|play_.*)$/;
+    const SKIP = /^(floor_oak.*|ktile|rug2|ceiling|downlight|glass|frame|sheer|curtain|outdoor|c_.*|cove|play_.*)$/;
     const HIDE = /^(kacc|kfurn|kbed|kbed2)_[gb](_.*)?$/;
     const patchMat = (mt) => { if (!mt || mt.__pl) return; mt.__pl = 1; const prev = mt.onBeforeCompile, pk = mt.customProgramCacheKey;
       mt.onBeforeCompile = function (sh, rr) { prev && prev.call(this, sh, rr); sh.uniforms.uPlay = U;
