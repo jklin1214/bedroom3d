@@ -9821,7 +9821,7 @@ function __master() {
       const TRIM = /^(skirting|molding|skirting_kidp?|molding_kidp?)$/;
       const HIDE = /^molding_kid.*$|^(kacc|kfurn|kbed|kbed2)_[gb](_.*)?$|^(kfurn|kbed|kbed2)_[gb]/;
       const cnd = (B) => B.map((b) => `(vPw.x>${b[0]}&&vPw.x<${b[1]}&&vPw.y>${b[2]}&&vPw.y<${b[3]}&&vPw.z>${b[4]}&&vPw.z<${b[5]})`).join('||');
-      const boxesFor = (n) => SKIP.test(n) ? null : n === 'metal' ? S.concat([[-2.61, 2.12, -0.02, 2.70, -5.615, -2.49], I[1], I[2], I[3]]) : STRUCT.test(n) ? S : TRIM.test(n) ? T : S.concat(I);
+      const boxesFor = (n) => n === 'ceiling' ? [[-3.62, 2.10, 2.40, 2.79, -5.70, -2.50]] : SKIP.test(n) ? null : n === 'metal' ? S.concat([[-2.61, 2.12, -0.02, 2.70, -5.615, -2.49], I[1], I[2], I[3]]) : STRUCT.test(n) ? S : TRIM.test(n) ? T : S.concat(I);
       const done = new WeakMap();
       const patchMat = (mt, B) => { if (!mt || done.has(mt)) return; done.set(mt, 1); const c = cnd(B), prev = mt.onBeforeCompile, pk = mt.customProgramCacheKey;
         mt.onBeforeCompile = function (sh, rr) { prev && prev.call(this, sh, rr); sh.uniforms.uPlay = U;
@@ -9860,7 +9860,7 @@ function __master() {
           ng.setAttribute('bake', new lt(new g.attributes.bake.array.constructor(bk), 3, g.attributes.bake.normalized)); if (g.attributes.color) { const c0 = Array.from(g.attributes.color.array.slice(0, 3)); ng.setAttribute('color', new lt(new Float32Array(pos.length).map((_, i) => c0[i % 3]), 3)); }
           ng.setAttribute('kidKeep', new lt(new Float32Array(kk), 1)); fp.geometry = ng; console.log('DBG play3 floor B0 ' + B0 + ' E ' + bE + ' S ' + bS); } }
       // 3b: north wall strip in former storage corner
-      grab(() => { patch('wall', r0, [qz(-3.605, -2.58, 0, 2.795, -5.648, 1), qz(-3.605, -2.58, 0, 2.795, -5.648, -1)], [2.20, 2.23, 0.3, 2.4, 2.2, 3.5]); });
+      grab(() => { patch('wall', r0, [qz(-3.605, -2.48, 0, 2.795, -5.648, 1), qz(-3.605, -2.48, 0, 2.795, -5.648, -1)], [2.20, 2.23, 0.3, 2.4, 2.2, 3.5]); });
       { const ref = it.children.find((c) => c.name === 'wall_mp' && c.geometry.attributes.bake); const rb = ref ? Array.from(ref.geometry.attributes.bake.array.slice(0, 3)) : [16700, 16300, 15500]; PL.forEach((c) => { const B = c.geometry.attributes.bake; if (B && /^wall/.test(c.name)) { for (let i = 0; i < B.array.length; i++) B.array[i] = Math.round(rb[i % 3] * [1.03, 1.01, 0.97][i % 3]); B.needsUpdate = !0; } }); }
       // play items
       const G = new ui(); G.name = 'play_items'; G.visible = !1; it.add(G);
