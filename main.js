@@ -9755,14 +9755,16 @@ function __master() {
     addDisc(/^molding$/, r0, [2.205, 9.215, 2.4, 2.81, 1.55, 2.045]);
     addDisc(/^(ceiling|downlight|cove)$/, r0, [2.205, 9.225, 2.40, 2.76, 0.70, 2.10]);
     addDisc(/^floor_oak$/, r0, [2.205, 9.225, -0.01, 0.01, 0.85, 2.07]);
-    addDisc(/^bwall$/, r0, [8.715, 8.745, -0.02, 2.81, 1.25, 1.945]);          // tub-zone east wall removed -> bath reaches the frosted window
+    addDisc(/^bwall$/, r0, [8.715, 8.745, -0.02, 2.81, 1.25, 1.945]);
+    addDisc(/^curtain$/, r0, [9.10, 9.245, -0.1, 2.9, 1.15, 1.90]);            // old living curtain at the frosted window -> replaced by bath roller blind          // tub-zone east wall removed -> bath reaches the frosted window
     // ---------- new geometry (patch quads fitted to neighbouring surfaces: same material, uv, flat baked light) ----------
     const qyd = (x0, x1, z0, z1, y) => ({ c: [[x0, y, z0], [x1, y, z0], [x1, y, z1], [x0, y, z1]], n: [0, -1, 0] });
     const NW0 = 0.70, NW1 = 0.86;
     patch('wall', r0, [qz(2.13, 9.22, 0, 2.80, NW0, -1)], [2.3, 4.8, 0.3, 2.4, 1.86, 1.88]);                          // new wall, living face
     patch('wall', r0, [qz(2.21, 4.06, 0, 2.80, NW1, 1)], [2.25, 4.0, 0.3, 2.4, 2.02, 2.04]);                            // new wall, master corridor face
     patch('wall', r0, [qx(2.13, 0, 2.80, NW0, 2.072, -1)], [2.12, 2.14, 0.3, 2.0, 2.82, 3.6]);                            // master west wall extension, hallway face
-    patch('skirting', r0, [qx(2.112, 0, 0.12, NW0 - 0.018, 1.87, -1)], [2.10, 2.12, 0.0, 0.12, 3.0, 6.4]);
+    patch('skirting', r0, [qx(2.112, 0, 0.12, NW0 - 0.018, 2.072, -1), qx(2.112, 0, 0.12, NW0 - 0.018, 2.072, 1), qy(2.112, 2.13, NW0 - 0.018, 2.072, 0.12)], [2.08, 2.135, 0.0, 0.12, 2.82, 3.6]);
+    patch('molding', r0, [qx(2.09, 2.48, 2.58, NW0 - 0.04, 2.072, -1), qx(2.09, 2.48, 2.58, NW0 - 0.04, 2.072, 1), qyd(2.09, 2.13, NW0 - 0.04, 2.072, 2.48)], [1.9, 2.14, 2.45, 2.81, 2.0, 9.0]);
     patch('skirting', r0, [qz(2.21, 4.06, 0, 0.12, NW1 + 0.017, 1), qx(2.227, 0, 0.12, NW1, 2.03, 1)], [2.2, 4.0, 0.0, 0.12, 2.04, 2.07]);
     patch('ceiling', r0, [qyd(2.13, 9.22, NW0, 2.06, 2.80)], [4.3, 8.5, 2.79, 2.81, 4.0, 6.0]);
     // pocket at the frosted window: closing wall (bath tile face + bedroom face), floors
@@ -9770,13 +9772,13 @@ function __master() {
     patch('wall', r0, [qz(8.73, 9.22, 0, 2.80, 2.01, 1)], [6.1, 8.6, 0.3, 2.4, 2.00, 2.02]);
     patch('btile', r0, [qy(8.72, 9.22, 1.26, 1.94, 0.0015)], [4.2, 5.9, -0.01, 0.01, 1.0, 2.5]);
     patch('floor_oak', r0, [qy(2.21, 4.07, 0.85, 2.075, 0.0015)], [4.3, 6.0, -0.01, 0.01, 3.95, 5.5]);                   // corridor strip
-    patch('floor_oak', r0, [qy(4.06, 6.06, 2.66, 3.885, 0.0015), qy(5.96, 8.745, 1.99, 3.19, 0.0015), qy(8.73, 9.22, 1.94, 2.45, 0.0015)], [4.3, 8.6, -0.01, 0.01, 3.95, 4.6]); // bedroom gains old bath area
+    patch('floor_oak', r0, [qy(4.06, 6.06, 2.66, 3.885, 0.0015), qy(5.96, 8.745, 1.99, 3.19, 0.0015), qy(8.73, 9.22, 1.94, 2.45, 0.0015)], [4.3, 6.0, -0.01, 0.01, 4.8, 5.8]); // bedroom gains old bath area
     applyDisc();
     // ---------- light-map consistency for patches is flat by construction; nothing stale moved except rigid blocks ----------
     // ---------- shear detector (after) ----------
     before.forEach((P0, m) => { const P = m.geometry.attributes.position.array, n = P.length / 3; let any = 0; const kk = m.geometry.attributes.kidKeep ? m.geometry.attributes.kidKeep.array : new Float32Array(n); for (let i = 0; i < n; i++) if (P[i * 3 + 2] !== P0[i * 3 + 2]) { kk[i] = 1; any = 1; } if (any) { if (m.geometry.attributes.kidKeep) m.geometry.attributes.kidKeep.needsUpdate = !0; else m.geometry.setAttribute('kidKeep', new lt(kk, 1)); } });
     let bad = []; before.forEach((P0, m) => { const P = m.geometry.attributes.position.array, I = m.geometry.index.array;
-      for (let k = 0; k < I.length; k += 3) { if (m.name === 'wall' && [0, 1, 2].every((j) => { const x = P0[I[k + j] * 3], z = P0[I[k + j] * 3 + 2]; return x > 2.12 && x < 2.14 && z > 1.80 && z < 2.05; }) || (m.name === 'wall' && [0, 1, 2].every((j) => { const x = P0[I[k + j] * 3]; return x > 2.12 && x < 2.14; }) && [0, 1, 2].some((j) => P0[I[k + j] * 3 + 2] !== P[I[k + j] * 3 + 2]) && Math.abs(triN(P0, I, k)[0]) > 0.9)) { I[k + 1] = I[k + 2] = I[k]; m.geometry.index.needsUpdate = !0; continue; } const a = triN(P0, I, k); if (a[3] < 1e-5) continue; const b = triN(P, I, k); if (Math.abs(a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) < 0.999) { if (m.name === 'wall' && Math.max(P0[I[k]*3], P0[I[k+1]*3], P0[I[k+2]*3]) > 9.1) { I[k+1] = I[k]; I[k+2] = I[k]; m.geometry.index.needsUpdate = true; continue; } if (bad.length < 40) bad.push(m.name + '@' + [0,1,2].map((j) => [P0[I[k+j] * 3], P0[I[k+j] * 3 + 1], P0[I[k+j] * 3 + 2]].map((q) => q.toFixed(2)).join(',') + (P0[I[k+j]*3+2] !== P[I[k+j]*3+2] ? 'M' : '')).join('|')); else bad.push(1); } } });
+      for (let k = 0; k < I.length; k += 3) { if (/^b?wall$/.test(m.name) && [0, 1, 2].every((j) => { const x = P[I[k + j] * 3], z = P[I[k + j] * 3 + 2]; return x > 8.715 && x < 8.745 && z > 1.24 && z < 1.95; })) { I[k + 1] = I[k + 2] = I[k]; m.geometry.index.needsUpdate = !0; continue; } if (m.name === 'wall' && [0, 1, 2].every((j) => { const x = P0[I[k + j] * 3], z = P0[I[k + j] * 3 + 2]; return x > 2.12 && x < 2.14 && z > 1.80 && z < 2.05; }) || (m.name === 'wall' && [0, 1, 2].every((j) => { const x = P0[I[k + j] * 3]; return x > 2.12 && x < 2.14; }) && [0, 1, 2].some((j) => P0[I[k + j] * 3 + 2] !== P[I[k + j] * 3 + 2]) && Math.abs(triN(P0, I, k)[0]) > 0.9)) { I[k + 1] = I[k + 2] = I[k]; m.geometry.index.needsUpdate = !0; continue; } const a = triN(P0, I, k); if (a[3] < 1e-5) continue; const b = triN(P, I, k); if (Math.abs(a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) < 0.999) { if (m.name === 'wall' && Math.max(P0[I[k]*3], P0[I[k+1]*3], P0[I[k+2]*3]) > 9.1) { I[k+1] = I[k]; I[k+2] = I[k]; m.geometry.index.needsUpdate = true; continue; } if (bad.length < 40) bad.push(m.name + '@' + [0,1,2].map((j) => [P0[I[k+j] * 3], P0[I[k+j] * 3 + 1], P0[I[k+j] * 3 + 2]].map((q) => q.toFixed(2)).join(',') + (P0[I[k+j]*3+2] !== P[I[k+j]*3+2] ? 'M' : '')).join('|')); else bad.push(1); } } });
     console.log('DBG step1 sheared ' + bad.length + ' ' + bad.filter((q) => q !== 1).join(' '));
     // projector picture plane created later at Ut(c1)
     c1 = c1 + DZ / zt;
@@ -9787,6 +9789,11 @@ function __master() {
     sv('mtv', 0, dz); sv('mbath', dz, dz); sv('mbath2', dz, dz); sv('mbath3', dz, dz);
     window.__cam = Be;
     const fixMir = () => Wh.forEach((o) => { if (o.__mv) return; const q = o.position; if (q.x > 4.0 && q.x < 9.235 && q.z > 1.99 && q.z < 3.95 && q.y > 0.3) { q.z += DZ; o.__mv = 1; o.updateMatrixWorld(); console.log('DBG mirror moved ' + q.x.toFixed(2) + ',' + q.z.toFixed(2)); } else o.__mv = 1; });
+    { const bm = new Kt({ color: 0xe9e5dd }); const tube = new dt(new sr(0.035, 0.035, 0.66, 20), bm); tube.rotation.x = Math.PI / 2; tube.position.set(9.245, 2.47, 1.53); it.add(tube);
+      const sh = new dt(new an(0.006, 0.42, 0.66), bm); sh.position.set(9.255, 2.24, 1.53); it.add(sh); const bar = new dt(new an(0.016, 0.025, 0.67), new Kt({ color: 0xb9a27a })); bar.position.set(9.255, 2.03, 1.53); it.add(bar); }
+    { const sk = it.children.find((c) => c.name === 'skirting_mp' && c.geometry.attributes.bake), mo = it.children.find((c) => c.name === 'molding_mp' && c.geometry.attributes.bake && c.geometry.attributes.bake.array[0] === 0); if (sk && mo) { const a = mo.geometry.attributes.bake.array, b = sk.geometry.attributes.bake.array; for (let i = 0; i < a.length; i++) a[i] = Math.min(65535, b[i % 3] * 1.15); mo.geometry.attributes.bake.needsUpdate = !0; } }
+    { const src = {}; it.children.forEach((c) => { if (c.isMesh && !/_/.test(c.name)) src[c.name] = src[c.name] || c; }); const mp = it.children.filter((c) => c.isMesh && /_mp$/.test(c.name)); setInterval(() => mp.forEach((c) => { const o = src[c.name.slice(0, -3)]; if (o && c.visible !== o.visible) { c.visible = o.visible; ei = Math.max(ei, 2); } }), 300); }
+    it.children.forEach((c) => { if (c.isMesh && c.name === 'frost') { const b = new c.geometry.constructor(); c.geometry.computeBoundingBox(); const bb = c.geometry.boundingBox; if (bb.min.x > 9.2 && bb.max.z < 1.95) c.material = new Kt({ color: 0xe6eaec, transparent: !0, opacity: 0.95 }); } });
     window.__Wh = Wh; fixMir(); { let c = 0; const iv = setInterval(() => { fixMir(); if (++c > 600) clearInterval(iv); }, 200); }
     console.log('DBG master ok');
   } catch (e) { console.error('DBG master failed', e); }
