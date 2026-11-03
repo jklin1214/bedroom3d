@@ -9625,7 +9625,7 @@ function __kids() {
     const px = (x) => x / zt + Oi, pz = (z) => z / zt + Bi;
     ['kids1', 'kids2', 'kids3', 'kids4'].forEach((id, ri) => { const v = cl.find((q) => q.id === id); if (!v) return; const r = R[ri];
       const e = W(r, (NX0 + NX1) / 2 + 0.05, -2.62), t = W(r, -1.45, -4.9); v.eye = [px(e[0]), pz(e[1]), 1.62]; v.look = [px(t[0]), pz(t[1]), 0.85]; });
-    window.__it = it; window.__ray = (x, y) => { Ff.setFromCamera({ x, y }, Be); return Ff.intersectObjects(it.children, !0).slice(0, 8).map((h) => [h.object.name, +h.point.x.toFixed(3), +h.point.y.toFixed(2), +h.point.z.toFixed(3)]); }; window.__kick = () => { ei = Math.max(ei, 4); };
+    window.__it = it; window.__ray = (x, y) => { Ff.setFromCamera({ x, y }, Be); return Ff.intersectObjects(it.children, !0).slice(0, 8).map((h) => [h.object.name, +h.point.x.toFixed(3), +h.point.y.toFixed(2), +h.point.z.toFixed(3)]); }; window.__kick = () => { ei = Math.max(ei, 4); }; window.__rayAll = (x, y) => { Ff.setFromCamera({ x, y }, Be); return Ff.intersectObjects(it.children, !0).map((h) => [h.object.name, +h.point.x.toFixed(3), +h.point.y.toFixed(2), +h.point.z.toFixed(3)]); };
     window.__setView = (p, t, f) => { Be.position.set(...p); at.target.set(...t); if (f) { Be.fov = f; Be.updateProjectionMatrix(); } at.update(); ei = Math.max(ei, 3); };
     console.log('DBG kids ok');
   } catch (e) { console.error('DBG kids failed', e); }
@@ -9809,6 +9809,66 @@ function __master() {
       console.log('DBG step2 K=' + K.toFixed(4) + ' pic ' + ((Nf - Uf) * zt).toFixed(3) + 'x' + (ur - fs).toFixed(3) + ' fs ' + fs.toFixed(3) + ' ur ' + ur.toFixed(3) + ' x ' + It(Uf).toFixed(3) + '..' + It(Nf).toFixed(3) + ' scrV ' + cnt + ' caseV ' + cs);
       const _bl = bl; bl = function (i) { const r = _bl.apply(this, arguments); const on = i > 0.002; if (vt.pj) vt.pj.layers.set(vt.pj.visible ? 0 : 31); vt.scr.forEach((t) => t.mesh.layers.set(on ? 0 : 31)); return r; };
     }
+    // ===== STEP 3: kids open play-area toggle =====
+    try {
+      const U = { value: 0 };
+      const S = [[-0.305, -0.185, -0.02, 2.795, -5.645, -2.47], [-2.725, 2.225, -0.02, 2.565, -2.495, -2.385], [-2.725, -2.605, -0.02, 2.795, -5.645, -2.47], [2.115, 2.225, -0.02, 2.565, -5.645, -2.47], [-3.605, -2.70, -0.02, 2.565, -3.645, -3.54]];
+      const thin = (b) => { const w = b[1] - b[0] < b[5] - b[4]; return w ? [b[0] - 0.13, b[1] + 0.13, b[2], b[3] + 0.02, b[4], b[5]] : [b[0], b[1], b[2], b[3] + 0.02, b[4] - 0.13, b[5] + 0.13]; };
+      const T = S.map(thin);
+      const I = [[-2.61, 2.12, -0.02, 2.799, -5.615, -2.49], [-3.68, -2.71, -0.02, 2.795, -5.645, -3.64], [2.215, 2.62, -0.02, 2.795, -5.645, -2.40], [2.55, 3.40, -0.02, 1.1, -5.42, -4.46]];
+      const SKIP = /^(floor_oak.*|ktile|ceiling.*|cove|downlight|glass|frame|frost|sheer|curtain|outdoor|facade|slab|c_.*|play_.*|.*_pl|.*_mp)$/;
+      const STRUCT = /^(wall|bwall|kwall_[gb]|kacc_[gb]|wall_kid|wall_kidp|kwall_[gb]_kid.*)$/;
+      const TRIM = /^(skirting|molding|skirting_kidp?|molding_kidp?)$/;
+      const HIDE = /^(kacc|kfurn|kbed|kbed2)_[gb](_.*)?$|^(kfurn|kbed|kbed2)_[gb]/;
+      const cnd = (B) => B.map((b) => `(vPw.x>${b[0]}&&vPw.x<${b[1]}&&vPw.y>${b[2]}&&vPw.y<${b[3]}&&vPw.z>${b[4]}&&vPw.z<${b[5]})`).join('||');
+      const boxesFor = (n) => SKIP.test(n) ? null : n === 'metal' ? S.concat([[-2.61, 2.12, -0.02, 2.70, -5.615, -2.49], I[1], I[2], I[3]]) : STRUCT.test(n) ? S : TRIM.test(n) ? T : S.concat(I);
+      const done = new WeakMap();
+      const patchMat = (mt, B) => { if (!mt || done.has(mt)) return; done.set(mt, 1); const c = cnd(B), prev = mt.onBeforeCompile, pk = mt.customProgramCacheKey;
+        mt.onBeforeCompile = function (sh, rr) { prev && prev.call(this, sh, rr); sh.uniforms.uPlay = U;
+          sh.vertexShader = sh.vertexShader.replace('void main() {', 'varying vec3 vPw;\nvoid main() {\nvPw = (modelMatrix * vec4(position,1.0)).xyz;');
+          sh.fragmentShader = sh.fragmentShader.replace('void main() {', 'uniform float uPlay;\nvarying vec3 vPw;\nvoid main() {\nif(uPlay>0.5&&(' + c + ')) discard;'); };
+        mt.customProgramCacheKey = function () { return (pk ? pk.call(this) : '') + '|pl3' + c.length; }; mt.needsUpdate = !0; };
+      const inAny = (m, B) => { const g = m.geometry; if (!g.boundingBox) g.computeBoundingBox(); const b = g.boundingBox.clone().applyMatrix4(m.matrixWorld);
+        return B.some((q) => b.max.x > q[0] && b.min.x < q[1] && b.max.z > q[4] && b.min.z < q[5] && b.max.y > q[2] && b.min.y < q[3]); };
+      const scan = () => it.traverse((m) => { if (!m.isMesh || m.isInstancedMesh) return; const n = m.name || ''; if (HIDE.test(n)) return; const B = boxesFor(n); if (!B || !inAny(m, B)) return;
+        [m.material, m.userData && m.userData.base, m.userData && m.userData.cap].forEach((mt) => patchMat(mt, B)); });
+      // patches (own meshes, toggled with play)
+      const PL = []; const grab = (fn) => { const k = it.children.length; fn(); for (let i = k; i < it.children.length; i++) { const c = it.children[i]; c.name = c.name.replace(/_mp$/, '_pl'); c.visible = !1; PL.push(c); } };
+      const fsb = [-2.4, -0.5, -0.01, 0.01, -5.2, -2.7];
+      grab(() => { patch('floor_oak', r0, [qy(-3.605, 2.62, -5.655, -2.39, 0.0025)], [-3.0, 1.5, -0.01, 0.01, -2.3, -1.2]); });
+      grab(() => { [S[0], S[2]].forEach((b) => patch('ceiling', r0, [qyd(b[0] - 0.005, b[1] + 0.005, b[4], b[5], 2.797)], [4.3, 8.5, 2.79, 2.81, 4.0, 6.0])); });
+      grab(() => { [S[1], S[3], S[4]].forEach((b) => patch('wall', r0, [qyd(b[0], b[1], b[4], b[5], 2.567)], [-2.4, 1.9, 2.55, 2.81, -2.50, -2.38])); });
+      grab(() => { patch('wall', r0, [qx(-3.600, 0, 2.795, -5.645, -3.645, 1), qx(-3.600, 0, 2.795, -5.645, -3.645, -1)], [2.20, 2.23, 0.3, 2.4, 2.2, 3.5]); patch('ceiling', r0, [qyd(-3.605, -2.70, -5.645, -3.54, 2.796)], [4.3, 8.5, 2.79, 2.81, 4.0, 6.0]); });
+      { const ref = it.children.find((c) => c.name === 'wall_mp' && c.geometry.attributes.bake); const rb = ref ? Array.from(ref.geometry.attributes.bake.array.slice(0, 3)) : [16700, 16300, 15500]; PL.forEach((c) => { const B = c.geometry.attributes.bake; if (B && /^wall/.test(c.name)) { for (let i = 0; i < B.array.length; i++) B.array[i] = rb[i % 3]; B.needsUpdate = !0; } }); }
+      // play items
+      const G = new ui(); G.name = 'play_items'; G.visible = !1; it.add(G);
+      const std = (c, o = {}) => new ea(Object.assign({ color: new Ae(c), roughness: 0.75, metalness: 0, emissive: new Ae(c).multiplyScalar(0.45) }, o));
+      const box = (mat, x0, x1, y0, y1, z0, z1) => { const b = new dt(new an(x1 - x0, y1 - y0, z1 - z0), mat); b.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); b.name = 'play_box'; G.add(b); return b; };
+      const pal = ['#F2C6B4', '#BFD8C8', '#C9D6EA', '#F3E1A6', '#E7D3E8', '#F6F1E7'].map((c) => std(c));
+      const MX0 = -2.3, MZ0 = -5.2; for (let i = 0; i < 6; i++) for (let j = 0; j < 4; j++) box(pal[(i + j) % 4], MX0 + i * 0.6 + 0.004, MX0 + (i + 1) * 0.6 - 0.004, 0.003, 0.02, MZ0 + j * 0.6 + 0.004, MZ0 + (j + 1) * 0.6 - 0.004);
+      const wood = std('#E8D9C0', { roughness: 0.6 });
+      [[-5.5, -4.6], [-4.55, -3.75]].forEach(([z0, z1]) => { const x0 = -3.58, x1 = -3.24; [0, 0.34, 0.68].forEach((y) => box(wood, x0, x1, y, y + 0.02, z0, z1));
+        [0, 0.5, 1].forEach((t) => { const z = z0 + t * (z1 - z0); box(wood, x0, x1, 0, 0.70, z - 0.01, z + 0.01); });
+        [0, 1].forEach((r) => [0, 1].forEach((k) => box(pal[(r * 2 + k + 1) % 6], x0 + 0.03, x1 - 0.03, 0.03 + r * 0.34, 0.27 + r * 0.34, z0 + 0.05 + k * (z1 - z0) / 2, z0 - 0.05 + (k + 1) * (z1 - z0) / 2))); });
+      [[-0.6, -3.3, 0.3, 0], [-0.25, -3.25, 0.25, 1], [-0.45, -3.3, 0.22, 2, 0.3], [0.3, -3.9, 0.35, 3], [0.62, -3.95, 0.28, 4]].forEach(([x, z, s, c, y = 0]) => { const b = box(pal[c], x - s / 2, x + s / 2, 0.02 + y, 0.02 + y + s, z - s / 2, z + s / 2); b.rotation.y = c * 0.4; });
+      const Tp = new ui(); Tp.position.set(1.45, 0.003, -4.85); G.add(Tp);
+      const cloth = std('#F4EEE2', { side: 2, roughness: 0.9 }); const cone = new dt(new sr(0.05, 0.62, 1.45, 6, 1, !0), cloth); cone.position.y = 0.725; Tp.add(cone);
+      const pole = std('#B89A72'); for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + 0.4; const p = new dt(new sr(0.015, 0.015, 1.75, 8), pole); p.position.set(Math.cos(a) * 0.3, 0.8, Math.sin(a) * 0.3); p.rotation.set(Math.sin(a) * 0.4, 0, -Math.cos(a) * 0.4); Tp.add(p); }
+      const cush = new dt(new sr(0.5, 0.5, 0.08, 24), pal[0]); cush.position.y = 0.04; Tp.add(cush);
+      const ball = new dt(new Qr(0.13, 20, 14), std('#E9A37E')); ball.position.set(0.9, 0.153, -3.2); G.add(ball);
+      const rugR = new dt(new sr(0.75, 0.75, 0.01, 40), std('#E6E0EF')); rugR.position.set(0.6, 0.008, -3.6); G.add(rugR);
+      G.traverse((c) => { if (c.isMesh) c.name = 'play_' + (c.name || 'item'); });
+      let on = 0;
+      const apply = () => { if (on) scan(); it.traverse((m) => { if (m.isMesh && HIDE.test(m.name || '')) { if (on) { if (m.__plv === undefined) m.__plv = m.visible; m.visible = !1; } else if (m.__plv !== undefined) { m.visible = m.__plv; m.__plv = undefined; } } });
+        U.value = on; G.visible = !!on; PL.forEach((c) => (c.visible = !!on)); ei = Math.max(ei, 3); try { Nt(); } catch (e) {} };
+      const btn = document.createElement('button'); btn.type = 'button'; btn.id = 'playBtn';
+      const lbl = () => { btn.textContent = on ? '小孩房：開放遊戲區' : '小孩房：隔間'; btn.classList.toggle('on', !!on); };
+      btn.onclick = () => { on = on ? 0 : 1; apply(); lbl(); }; lbl();
+      const seg = document.getElementById('r10seg'); seg && seg.appendChild(btn);
+      setInterval(() => { if (on) apply(); }, 1500);
+      window.__play = (v) => { on = v ? 1 : 0; apply(); lbl(); };
+      console.log('DBG play3 ok PL ' + PL.length);
+    } catch (e) { console.error('DBG play3 failed', e); }
     console.log('DBG master ok');
   } catch (e) { console.error('DBG master failed', e); }
 }
