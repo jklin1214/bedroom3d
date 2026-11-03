@@ -9625,7 +9625,7 @@ function __kids() {
     const px = (x) => x / zt + Oi, pz = (z) => z / zt + Bi;
     ['kids1', 'kids2', 'kids3', 'kids4'].forEach((id, ri) => { const v = cl.find((q) => q.id === id); if (!v) return; const r = R[ri];
       const e = W(r, (NX0 + NX1) / 2 + 0.05, -2.62), t = W(r, -1.45, -4.9); v.eye = [px(e[0]), pz(e[1]), 1.62]; v.look = [px(t[0]), pz(t[1]), 0.85]; });
-    window.__it = it; window.__ray = (x, y) => { Ff.setFromCamera({ x, y }, Be); return Ff.intersectObjects(it.children, !0).slice(0, 8).map((h) => [h.object.name, +h.point.x.toFixed(3), +h.point.y.toFixed(2), +h.point.z.toFixed(3)]); }; window.__kick = () => { ei = Math.max(ei, 4); }; window.__rayAll = (x, y) => { Ff.setFromCamera({ x, y }, Be); return Ff.intersectObjects(it.children, !0).map((h) => [h.object.name, +h.point.x.toFixed(3), +h.point.y.toFixed(2), +h.point.z.toFixed(3)]); };
+    window.__it = it; window.__ray = (x, y) => { Ff.setFromCamera({ x, y }, Be); return Ff.intersectObjects(it.children, !0).slice(0, 8).map((h) => [h.object.name, +h.point.x.toFixed(3), +h.point.y.toFixed(2), +h.point.z.toFixed(3)]); }; window.__kick = () => { ei = Math.max(ei, 4); }; window.__rayO = (x, y) => { Ff.setFromCamera({ x, y }, Be); return Ff.intersectObjects(it.children, !0); }; window.__rayAll = (x, y) => { Ff.setFromCamera({ x, y }, Be); return Ff.intersectObjects(it.children, !0).map((h) => [h.object.name, +h.point.x.toFixed(3), +h.point.y.toFixed(2), +h.point.z.toFixed(3)]); };
     window.__setView = (p, t, f) => { Be.position.set(...p); at.target.set(...t); if (f) { Be.fov = f; Be.updateProjectionMatrix(); } at.update(); ei = Math.max(ei, 3); };
     console.log('DBG kids ok');
   } catch (e) { console.error('DBG kids failed', e); }
@@ -9813,13 +9813,13 @@ function __master() {
     try {
       const U = { value: 0 };
       const S = [[-0.305, -0.185, -0.02, 2.795, -5.645, -2.47], [-2.725, 2.225, -0.02, 2.565, -2.495, -2.385], [-2.725, -2.605, -0.02, 2.795, -5.645, -2.47], [2.115, 2.225, -0.02, 2.565, -5.645, -2.47], [-3.605, -2.70, -0.02, 2.565, -3.645, -3.54]];
-      const thin = (b) => { const w = b[1] - b[0] < b[5] - b[4]; return w ? [b[0] - 0.13, b[1] + 0.13, b[2], b[3] + 0.02, b[4], b[5]] : [b[0], b[1], b[2], b[3] + 0.02, b[4] - 0.13, b[5] + 0.13]; };
-      const T = S.map(thin);
-      const I = [[-2.61, 2.12, -0.02, 2.799, -5.615, -2.49], [-3.68, -2.71, -0.02, 2.795, -5.645, -3.64], [2.215, 2.62, -0.02, 2.795, -5.645, -2.40], [2.55, 3.40, -0.02, 1.1, -5.42, -4.46]];
+      const thin = (b) => { const w = b[1] - b[0] < b[5] - b[4]; return w ? [b[0] - 0.13, b[1] + 0.13, b[2], 2.83, b[4], b[5]] : [b[0], b[1], b[2], 2.83, b[4] - 0.13, b[5] + 0.13]; };
+      const T = S.map(thin).concat([[-3.62, 2.64, 2.50, 2.85, -5.68, -2.37]]);
+      const I = [[-2.61, 2.12, -0.02, 2.799, -5.615, -2.49], [-3.70, -2.60, -0.02, 2.795, -5.70, -3.538], [2.215, 2.62, -0.02, 2.795, -5.645, -2.40], [2.55, 3.40, -0.02, 1.1, -5.42, -4.46]];
       const SKIP = /^(floor_oak.*|ktile|ceiling.*|cove|downlight|glass|frame|frost|sheer|curtain|outdoor|facade|slab|c_.*|play_.*|.*_pl|.*_mp)$/;
       const STRUCT = /^(wall|bwall|kwall_[gb]|kacc_[gb]|wall_kid|wall_kidp|kwall_[gb]_kid.*)$/;
       const TRIM = /^(skirting|molding|skirting_kidp?|molding_kidp?)$/;
-      const HIDE = /^(kacc|kfurn|kbed|kbed2)_[gb](_.*)?$|^(kfurn|kbed|kbed2)_[gb]/;
+      const HIDE = /^molding_kid.*$|^(kacc|kfurn|kbed|kbed2)_[gb](_.*)?$|^(kfurn|kbed|kbed2)_[gb]/;
       const cnd = (B) => B.map((b) => `(vPw.x>${b[0]}&&vPw.x<${b[1]}&&vPw.y>${b[2]}&&vPw.y<${b[3]}&&vPw.z>${b[4]}&&vPw.z<${b[5]})`).join('||');
       const boxesFor = (n) => SKIP.test(n) ? null : n === 'metal' ? S.concat([[-2.61, 2.12, -0.02, 2.70, -5.615, -2.49], I[1], I[2], I[3]]) : STRUCT.test(n) ? S : TRIM.test(n) ? T : S.concat(I);
       const done = new WeakMap();
@@ -9839,7 +9839,29 @@ function __master() {
       grab(() => { [S[0], S[2]].forEach((b) => patch('ceiling', r0, [qyd(b[0] - 0.005, b[1] + 0.005, b[4], b[5], 2.797)], [4.3, 8.5, 2.79, 2.81, 4.0, 6.0])); });
       grab(() => { [S[1], S[3], S[4]].forEach((b) => patch('wall', r0, [qyd(b[0], b[1], b[4], b[5], 2.567)], [-2.4, 1.9, 2.55, 2.81, -2.50, -2.38])); });
       grab(() => { patch('wall', r0, [qx(-3.600, 0, 2.795, -5.645, -3.645, 1), qx(-3.600, 0, 2.795, -5.645, -3.645, -1)], [2.20, 2.23, 0.3, 2.4, 2.2, 3.5]); patch('ceiling', r0, [qyd(-3.605, -2.70, -5.645, -3.54, 2.796)], [4.3, 8.5, 2.79, 2.81, 4.0, 6.0]); });
-      { const ref = it.children.find((c) => c.name === 'wall_mp' && c.geometry.attributes.bake); const rb = ref ? Array.from(ref.geometry.attributes.bake.array.slice(0, 3)) : [16700, 16300, 15500]; PL.forEach((c) => { const B = c.geometry.attributes.bake; if (B && /^wall/.test(c.name)) { for (let i = 0; i < B.array.length; i++) B.array[i] = rb[i % 3]; B.needsUpdate = !0; } }); }
+
+      // 3b: floor gradient toward neighbouring floors (seamless edges)
+      { const fp = PL.find((c) => c.name === 'floor_oak_pl'), src = it.children.find((c) => c.name === 'floor_oak' && c.isMesh);
+        if (fp && src && src.geometry.attributes.bake) { const SP = src.geometry.attributes.position, SB = src.geometry.attributes.bake;
+          const med = (x0, x1, z0, z1) => { const a = [[], [], []]; for (let v = 0; v < SP.count; v++) { const x = SP.getX(v), y = SP.getY(v), z = SP.getZ(v); if (Math.abs(y) < 0.005 && x > x0 && x < x1 && z > z0 && z < z1) for (let k = 0; k < 3; k++) a[k].push(SB.array[v * 3 + k]); } return a[0].length ? a.map((q) => q.sort((u, w) => u - w)[q.length >> 1]) : null; };
+          const g = fp.geometry, P = g.attributes.position.array, UVa = g.attributes.uv ? g.attributes.uv.array : null, B0 = Array.from(g.attributes.bake.array.slice(0, 3));
+          const bE = med(2.64, 2.95, -5.4, -2.6) || B0, bS = med(-3.2, 2.0, -2.37, -2.15) || B0;
+          // uv linear map from first triangle
+          let uvf = null; if (UVa) { const X = [0, 1, 2].map((i) => [P[i * 3], P[i * 3 + 2], 1]), Uu = [0, 1, 2].map((i) => UVa[i * 2]), Vv = [0, 1, 2].map((i) => UVa[i * 2 + 1]);
+            const det = (M) => M[0][0] * (M[1][1] * M[2][2] - M[1][2] * M[2][1]) - M[0][1] * (M[1][0] * M[2][2] - M[1][2] * M[2][0]) + M[0][2] * (M[1][0] * M[2][1] - M[1][1] * M[2][0]);
+            const sol = (y) => { const D = det(X); return [0, 1, 2].map((c) => det(X.map((r, ri) => r.map((e, ci) => (ci === c ? y[ri] : e)))) / D); }; uvf = [sol(Uu), sol(Vv)]; }
+          const x0 = -3.605, x1 = 2.62, z0 = -5.655, z1 = -2.39, NX = 32, NZ = 16, pos = [], nrm = [], uv = [], bk = [], kk = [];
+          const ss = (t) => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+          const bakeAt = (x, z) => { const we = ss((x - 1.6) / (x1 - 1.6)), ws = ss((z - (-3.2)) / (z1 + 3.2)); return [0, 1, 2].map((k) => { let b = B0[k] * (1 - we) + bE[k] * we; return b * (1 - ws) + bS[k] * ws; }); };
+          const V = (x, z) => { pos.push(x, 0.0025, z); nrm.push(0, 127, 0); if (uvf) uv.push(uvf[0][0] * x + uvf[0][1] * z + uvf[0][2], uvf[1][0] * x + uvf[1][1] * z + uvf[1][2]); bk.push(...bakeAt(x, z).map(Math.round)); kk.push(1); };
+          for (let i = 0; i < NX; i++) for (let j = 0; j < NZ; j++) { const xa = x0 + (x1 - x0) * i / NX, xb = x0 + (x1 - x0) * (i + 1) / NX, za = z0 + (z1 - z0) * j / NZ, zb = z0 + (z1 - z0) * (j + 1) / NZ;
+            [[xa, zb], [xb, zb], [xb, za], [xa, zb], [xb, za], [xa, za]].forEach((q) => V(q[0], q[1])); }
+          const ng = new _t(); ng.setAttribute('position', new lt(new Float32Array(pos), 3)); ng.setAttribute('normal', new lt(new Int8Array(nrm), 3, !0)); if (uvf) ng.setAttribute('uv', new lt(new Float32Array(uv), 2));
+          ng.setAttribute('bake', new lt(new g.attributes.bake.array.constructor(bk), 3, g.attributes.bake.normalized)); if (g.attributes.color) { const c0 = Array.from(g.attributes.color.array.slice(0, 3)); ng.setAttribute('color', new lt(new Float32Array(pos.length).map((_, i) => c0[i % 3]), 3)); }
+          ng.setAttribute('kidKeep', new lt(new Float32Array(kk), 1)); fp.geometry = ng; console.log('DBG play3 floor B0 ' + B0 + ' E ' + bE + ' S ' + bS); } }
+      // 3b: north wall strip in former storage corner
+      grab(() => { patch('wall', r0, [qz(-3.605, -2.58, 0, 2.795, -5.648, 1), qz(-3.605, -2.58, 0, 2.795, -5.648, -1)], [2.20, 2.23, 0.3, 2.4, 2.2, 3.5]); });
+      { const ref = it.children.find((c) => c.name === 'wall_mp' && c.geometry.attributes.bake); const rb = ref ? Array.from(ref.geometry.attributes.bake.array.slice(0, 3)) : [16700, 16300, 15500]; PL.forEach((c) => { const B = c.geometry.attributes.bake; if (B && /^wall/.test(c.name)) { for (let i = 0; i < B.array.length; i++) B.array[i] = Math.round(rb[i % 3] * [1.03, 1.01, 0.97][i % 3]); B.needsUpdate = !0; } }); }
       // play items
       const G = new ui(); G.name = 'play_items'; G.visible = !1; it.add(G);
       const std = (c, o = {}) => new ea(Object.assign({ color: new Ae(c), roughness: 0.75, metalness: 0, emissive: new Ae(c).multiplyScalar(0.45) }, o));
@@ -9858,8 +9880,17 @@ function __master() {
       const ball = new dt(new Qr(0.13, 20, 14), std('#E9A37E')); ball.position.set(0.9, 0.153, -3.2); G.add(ball);
       const rugR = new dt(new sr(0.75, 0.75, 0.01, 40), std('#E6E0EF')); rugR.position.set(0.6, 0.008, -3.6); G.add(rugR);
       G.traverse((c) => { if (c.isMesh) c.name = 'play_' + (c.name || 'item'); });
+      { const thm = std('#CDBB9E', { roughness: 0.55 }); const t1 = box(thm, 2.60, 2.645, 0.0, 0.006, -5.655, -2.37); t1.name = 'threshold_x'; const t2 = box(thm, -3.605, 2.645, 0.0, 0.006, -2.415, -2.37); t2.name = 'threshold_z'; }
+      const RB = (() => { const ref = it.children.find((c) => c.name === 'wall_mp' && c.geometry.attributes.bake); return ref ? Array.from(ref.geometry.attributes.bake.array.slice(0, 3)) : [16700, 16300, 15500]; })();
+      const WW = [Math.round(RB[0] * 1.03), Math.round(RB[1] * 1.01), Math.round(RB[2] * 0.97)];
+      const inK = (x, z) => x > -3.62 && x < 2.64 && z > -5.68 && z < -2.37;
+      const CB = (() => { const c = it.children.find((m) => m.name === 'ceiling' && m.geometry.attributes.bake); if (!c) return RB; c.updateMatrixWorld(); const P = c.geometry.attributes.position, B = c.geometry.attributes.bake.array, v = new it.position.constructor(), r = [[], [], []]; for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i).applyMatrix4(c.matrixWorld); if (v.x > 2.8 && v.x < 6 && v.z > -5.6 && v.z < -1) for (let k = 0; k < 3; k++) r[k].push(B[i * 3 + k]); } return r[0].length ? r.map((a) => (a.sort((x, y) => x - y), a[a.length >> 1])) : RB; })();
+      const rebake = () => it.traverse((m) => { if (!m.isMesh) return; const kw = /^k(wall|acc)_[gb]/.test(m.name || ''), ce = /^ceiling(_pl|_mp)?$/.test(m.name || ''); if (!kw && !ce) return; const g = m.geometry, B = g.attributes.bake; if (!B) return; if (on) { if (g.__ob) return; g.__ob = B.array.slice(); m.updateMatrixWorld(); const P = g.attributes.position, v = new it.position.constructor(); for (let i = 0; i < P.count; i++) { if (ce) { v.fromBufferAttribute(P, i).applyMatrix4(m.matrixWorld); if (!inK(v.x, v.z)) continue; } const t = kw ? WW : CB; for (let k = 0; k < 3; k++) B.array[i * 3 + k] = t[k]; } B.needsUpdate = !0; } else if (g.__ob) { B.array.set(g.__ob); g.__ob = null; B.needsUpdate = !0; } });
+      console.log('DBG play3b RB ' + RB + ' CB ' + CB);
       let on = 0;
-      const apply = () => { if (on) scan(); it.traverse((m) => { if (m.isMesh && HIDE.test(m.name || '')) { if (on) { if (m.__plv === undefined) m.__plv = m.visible; m.visible = !1; } else if (m.__plv !== undefined) { m.visible = m.__plv; m.__plv = undefined; } } });
+      const NEU = (() => { const w = it.children.find((c) => c.name === 'wall' && c.isMesh); return w && w.material.color ? w.material.color.clone() : new Ae('#ECE8E1'); })();
+      const paint = () => it.traverse((m) => { if (!m.isMesh || !/^k(wall|acc)_[gb]/.test(m.name || '')) return; [m.material, m.userData && m.userData.base, m.userData && m.userData.cap].forEach((mt) => { if (!mt || !mt.color) return; if (on) { if (!mt.__pc) mt.__pc = mt.color.clone(); mt.color.copy(NEU); } else if (mt.__pc) { mt.color.copy(mt.__pc); mt.__pc = null; } }); });
+      const apply = () => { if (on) scan(); paint(); rebake(); it.traverse((m) => { if (m.isMesh && HIDE.test(m.name || '')) { if (on) { if (m.__plv === undefined) m.__plv = m.visible; m.visible = !1; } else if (m.__plv !== undefined) { m.visible = m.__plv; m.__plv = undefined; } } });
         U.value = on; G.visible = !!on; PL.forEach((c) => (c.visible = !!on)); ei = Math.max(ei, 3); try { Nt(); } catch (e) {} };
       const btn = document.createElement('button'); btn.type = 'button'; btn.id = 'playBtn';
       const lbl = () => { btn.textContent = on ? '小孩房：開放遊戲區' : '小孩房：隔間'; btn.classList.toggle('on', !!on); };
