@@ -9977,6 +9977,21 @@ function __master() {
       patch('floor_oak', r0, [qy(-3.58, -1.45, -0.50, 1.15, 0.0025)], [-3.5, -1.0, -0.01, 0.01, 1.2, 2.1], [1.6, 0, -1.6]); // old dining footprint: floor map has AO painted in; sample along the vein direction
       console.log('DBG L4 nook ' + nk + ' moved ' + nc + ' dropped ' + nd + ' ' + rep.join(' '));
     } catch (e) { console.error('DBG L4 failed', e); }
+    // ===== L5: island back to 4 bar stools: clone the stool at z~-0.77 to z~0.0 and z~0.77 =====
+    try {
+      const SB = [-3.87, -2.70, -0.005, 0.90, -1.20, -0.36], SR = /^(boucle|brass|chrome|metal)$/; let ns = 0; const rp = [];
+      it.children.slice().forEach((m) => { if (!m.isMesh || !SR.test(m.name) || !m.geometry.index) return; const g = m.geometry, P = g.attributes.position.array, I = g.index.array, sel = [];
+        for (let k = 0; k < I.length; k += 3) if ([0, 1, 2].every((q) => { const v = I[k + q] * 3; return P[v] > SB[0] && P[v] < SB[1] && P[v + 1] > SB[2] && P[v + 1] < SB[3] && P[v + 2] > SB[4] && P[v + 2] < SB[5]; })) sel.push(I[k], I[k + 1], I[k + 2]);
+        if (!sel.length) return;
+        [0.77, 1.54].forEach((dz, di) => { const ng = new _t();
+          for (const key in g.attributes) { const a = g.attributes[key], sz = a.itemSize, arr = new a.array.constructor(sel.length * sz); sel.forEach((vi, j) => { for (let c = 0; c < sz; c++) arr[j * sz + c] = a.array[vi * sz + c]; });
+            if (key === 'position') for (let j = 0; j < sel.length; j++) arr[j * 3 + 2] += dz;
+            ng.setAttribute(key, new lt(arr, sz, a.normalized)); }
+          ng.setAttribute('kidKeep', new lt(new Float32Array(sel.length).fill(1), 1)); ng.computeBoundingBox(); ng.computeBoundingSphere();
+          const nm = new dt(ng, m.material); nm.name = m.name + '_st' + di; nm.userData = m.userData; nm.castShadow = nm.receiveShadow = !0; it.add(nm); ns += sel.length / 3;
+          if (!di) { const bb = ng.boundingBox; rp.push(m.name + ':' + sel.length / 3 + '[' + [bb.min.x, bb.max.x, bb.min.y, bb.max.y, bb.min.z - dz, bb.max.z - dz].map((q) => q.toFixed(2)) + ']'); } }); });
+      console.log('DBG L5 stools ' + ns + ' ' + rp.join(' '));
+    } catch (e) { console.error('DBG L5 failed', e); }
     console.log('DBG master ok');
   } catch (e) { console.error('DBG master failed', e); }
 }
