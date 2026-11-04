@@ -10055,3 +10055,7 @@ function __master() {
     console.log('DBG master ok');
   } catch (e) { console.error('DBG master failed', e); }
 }
+
+setTimeout(()=>{window.__rayO=(x,y)=>{Ff.setFromCamera({x,y},Be);return Ff.intersectObjects(Sa,!1);};window.__cl=cl;window.__cam=Be;window.__Oi=Oi;window.__Bi=Bi;window.__zt=zt;},1);
+
+setTimeout(()=>{window.__look=(x,z)=>Yh({id:"walk",kind:"eye",eyeW:Be.position.clone(),lookW:new A(x,Be.position.y-0.6,z),lens:17,out:0,ev:0.8});},1);
