@@ -5598,10 +5598,14 @@ cl.forEach((i) => {
   ((e.type = "button"),
     (e.textContent = i.name),
     e.setAttribute("aria-pressed", "false"),
-    (e.onclick = () => Yh(i)),
+    (e.onclick = () => { if (window.__PLAYON && window.__play && i.id !== "all") window.__play(0); Yh(i); }),
     Ry.appendChild(e),
     (xi[i.id] = e));
+  const KEEP = { all: "全屋俯視", living: "客廳", island: "餐廚中島", mbed: "主臥", mbath: "主浴", kids1: "小孩房" };
+  if (KEEP[i.id]) e.textContent = KEEP[i.id]; else e.style.display = "none";
 });
+{ const kv = cl.find((q) => q.id === "kids1"); const b = document.createElement("button"); b.type = "button"; b.textContent = "開放遊戲區"; b.setAttribute("aria-pressed", "false");
+  b.onclick = () => { window.__play && window.__play(1); kv && Yh(kv); }; Ry.appendChild(b); xi.__playview = b; }
 var Xf = document.getElementById("cut"),
   Ch = document.getElementById("cutWrap"),
   gr = document.getElementById("hintText"),
@@ -8226,7 +8230,7 @@ async function $y() {
       "c_dmarble",
       "c_paving",
       "c_lawn",
-    ].includes(U.name) && Sl.push(ee),
+    ].includes(U.name.replace(/__p$/, "")) && Sl.push(ee),
       (!I.ext || U.name === "outdoor") &&
         !I.glass &&
         !I.emit &&
@@ -9098,7 +9102,7 @@ function Tp(i, e) {
   if (mt.seq) return;
   let s = An.endsWith("i"),
     r = Ff.intersectObjects(Sa, !1).find(
-      (f) => f.point.y <= n + 0.001 && (s || f.point.y > -5),
+      (f) => (() => { for (let q = f.object; q; q = q.parent) if (!q.visible) return !1; return !0; })() && f.point.y <= n + 0.001 && (s || f.point.y > -5),
     );
   if (!r || (xs !== "orbit" && ti(r.point.y) !== ti(Be.position.y))) return;
   let o = r.point.x / zt + Oi,
@@ -9499,7 +9503,7 @@ body.annot .dock,body.annot #hint{visibility:hidden}`;
     mt.onBeforeCompile=(sh,r)=>{ prev&&prev.call(mt,sh,r); sh.uniforms.uWhite={value:W};
       sh.fragmentShader='uniform vec3 uWhite;\n'+sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n diffuseColor.rgb = mix(diffuseColor.rgb, uWhite, 0.85);'); };
     mt.customProgramCacheKey=()=> 'white1'; mt.needsUpdate=!0; };
-  const run=()=>{ let n=0; it.traverse(o=>{ if(o.isMesh&&(o.name==='slats'||o.name==='slats_mod'||(o.userData&&o.userData.name==='slats'))){ n++; [o.material,o.userData.base,o.userData.cap].forEach(patch);} }); return n; };
+  const run=()=>{ let n=0; it.traverse(o=>{ if(o.isMesh&&(o.name==='slats'||o.name==='slats__p'||o.name==='slats_mod'||(o.userData&&o.userData.name==='slats'))){ n++; [o.material,o.userData.base,o.userData.cap].forEach(patch);} }); return n; };
   const h=setInterval(()=>{ if(run()>0 && it.getObjectByName('slats_mod')){ clearInterval(h); ei=Math.max(ei,2); } },700);
   setTimeout(()=>clearInterval(h),180000);
 })();
@@ -9825,7 +9829,7 @@ function __master() {
     it.children.forEach((c) => { if (/^molding_mp$/.test(c.name) && c.geometry.attributes.position.array[0] < 2.2 && c.geometry.attributes.bake) { const a = c.geometry.attributes.bake.array; if (a[0]) { for (let i = 0; i < a.length; i++) a[i] = Math.min(65535, a[i] * 1.35); c.geometry.attributes.bake.needsUpdate = !0; } } });
     { const sk = it.children.find((c) => c.name === 'skirting_mp' && c.geometry.attributes.bake), mo = it.children.find((c) => c.name === 'molding_mp' && c.geometry.attributes.bake && c.geometry.attributes.bake.array[0] === 0); if (sk && mo) { const a = mo.geometry.attributes.bake.array, b = sk.geometry.attributes.bake.array; for (let i = 0; i < a.length; i++) a[i] = Math.min(65535, b[i % 3] * 1.15); mo.geometry.attributes.bake.needsUpdate = !0; } }
     { const src = {}; it.children.forEach((c) => { if (c.isMesh && !/_/.test(c.name)) src[c.name] = src[c.name] || c; }); const mp = it.children.filter((c) => c.isMesh && /_mp$/.test(c.name)); setInterval(() => mp.forEach((c) => { const o = src[c.name.slice(0, -3)]; if (o && c.visible !== o.visible) { c.visible = o.visible; ei = Math.max(ei, 2); } }), 300); }
-    it.children.forEach((c) => { if (!window.__INT && c.isMesh && c.name === 'frost') { const b = new c.geometry.constructor(); c.geometry.computeBoundingBox(); const bb = c.geometry.boundingBox; if (bb.min.x > 9.2 && bb.max.z < 1.95) c.material = new Kt({ color: 0xe6eaec, transparent: !0, opacity: 0.95 }); const fm = c.material; let ln = null; setInterval(() => { if (ln !== He) { ln = He; fm.color.setHex(He ? 0x4a5058 : 0xe6eaec); ei = Math.max(ei, 2); } }, 300); } });
+    it.children.forEach((c) => { if (c.isMesh && c.name === 'frost') { const b = new c.geometry.constructor(); c.geometry.computeBoundingBox(); const bb = c.geometry.boundingBox; if (bb.min.x > 9.2 && bb.max.z < 1.95) c.material = new Kt({ color: 0xe6eaec, transparent: !0, opacity: 0.95 }); const fm = c.material; let ln = null; setInterval(() => { if (ln !== He) { ln = He; fm.color.setHex(He ? 0x4a5058 : 0xe6eaec); ei = Math.max(ei, 2); } }, 300); } });
     window.__Wh = Wh; fixMir(); { let c = 0; const iv = setInterval(() => { fixMir(); if (++c > 600) clearInterval(iv); }, 200); }
 
     // ===== STEP 2: projector screen -> max 16:9 touching the floor =====
@@ -9929,7 +9933,7 @@ function __master() {
       const sliv = () => { const w = it.children.find((c) => c.name === 'wall' && c.isMesh); if (!w) return; const g = w.geometry, P = g.attributes.position; if (!g.__sv) { w.updateMatrixWorld(); const v = new it.position.constructor(), L = []; const n = g.index ? g.index.count / 3 : P.count / 3; for (let t = 0; t < n; t++) { const ix = [0, 1, 2].map((k) => g.index ? g.index.getX(t * 3 + k) : t * 3 + k); let ok = !0, mz = 9; ix.forEach((i) => { v.fromBufferAttribute(P, i).applyMatrix4(w.matrixWorld); if (Math.abs(v.x + 2.624) > 0.004) ok = !1; mz = Math.min(mz, v.z); }); if (ok && mz < -5.644) L.push(ix); } g.__sv = L; console.log('DBG play3f sliver tris ' + L.length + (g.index ? ' idx' : ' flat')); }
         if (g.index) { const I = g.index; g.__sv.forEach((ix) => { if (!ix.pos) { ix.pos = []; for (let t = 0; t < I.count; t += 3) if (I.getX(t) === ix[0] && I.getX(t + 1) === ix[1] && I.getX(t + 2) === ix[2]) { ix.pos.push(t); } } ix.pos.forEach((t) => { if (on) { I.setX(t + 1, ix[0]); I.setX(t + 2, ix[0]); } else { I.setX(t + 1, ix[1]); I.setX(t + 2, ix[2]); } }); }); I.needsUpdate = !0; }
         else { g.__sv.forEach((ix) => { if (!ix.o) ix.o = ix.map((i) => [P.getX(i), P.getY(i), P.getZ(i)]); ix.forEach((i, k) => { const q = on ? ix.o[0] : ix.o[k]; P.setXYZ(i, q[0], q[1], q[2]); }); }); P.needsUpdate = !0; } };
-      const apply = () => { if (window.__INT) { window.__PLAYON = on; G.visible = !!on; Bh(); ei = Math.max(ei, 3); return; } if (on) scan(); paint(); rebake(); sliv(); it.traverse((m) => { if (m.isMesh && HIDE.test(m.name || '')) { if (on) { if (m.__plv === undefined) m.__plv = m.visible; m.visible = !1; } else if (m.__plv !== undefined) { m.visible = m.__plv; m.__plv = undefined; } } });
+      const apply = () => { if (window.__INT) { window.__PLAYON = on; G.visible = !!on; paint(); Bh(); ei = Math.max(ei, 3); return; } if (on) scan(); paint(); rebake(); sliv(); it.traverse((m) => { if (m.isMesh && HIDE.test(m.name || '')) { if (on) { if (m.__plv === undefined) m.__plv = m.visible; m.visible = !1; } else if (m.__plv !== undefined) { m.visible = m.__plv; m.__plv = undefined; } } });
         U.value = on; G.visible = !!on; PL.forEach((c) => (c.visible = !!on)); ei = Math.max(ei, 3); try { Nt(); } catch (e) {} };
       const btn = document.createElement('button'); btn.type = 'button'; btn.id = 'playBtn';
       const lbl = () => { btn.textContent = on ? '小孩房：開放遊戲區' : '小孩房：隔間'; btn.classList.toggle('on', !!on); };
