@@ -9706,7 +9706,7 @@ function __master() {
           const D = det(A); if (Math.abs(D) < 1e-9) return [0, 0, S.length ? UV.getComponent(S[0], comp) : 0];
           return [0, 1, 2].map((i) => det(A.map((row, ri) => row.map((e, ci) => (ci === i ? y[ri] : e)))) / D); };
         const fu = UV ? fit(0) : null, fv = UV ? fit(1) : null;
-        if (/^(bwall|btile|floor_oak)$/.test(name)) console.log('DBG patch ' + name + ' S=' + S.length + ' uv ' + (UV ? fu.map((q) => q.toFixed(3)) + '/' + fv.map((q) => q.toFixed(3)) : '-') + ' bake ' + (B ? [0, 1, 2].map((i) => { const v = S.map((q) => B.getComponent(q, i)).sort((x, y) => x - y); return v.length ? v[v.length >> 1].toFixed(3) : -1; }) : '-'));
+        if (/^(bwall|btile|floor_oak|rug_living)$/.test(name)) console.log('DBG patch ' + name + ' S=' + S.length + ' uv ' + (UV ? fu.map((q) => q.toFixed(3)) + '/' + fv.map((q) => q.toFixed(3)) : '-') + ' bake ' + (B ? [0, 1, 2].map((i) => { const v = S.map((q) => B.getComponent(q, i)).sort((x, y) => x - y); return v.length ? v[v.length >> 1].toFixed(3) : -1; }) : '-'));
         const avg = (a) => [0, 1, 2].map((i) => { const v = S.map((q) => a.getComponent(q, i)).sort((x, y) => x - y); return v.length ? v[v.length >> 1] : 0.5; });
         const ab = B ? avg(B) : null, ac = C ? avg(C) : null;
         [0, 1, 2, 0, 2, 3].forEach((i) => { const p = wc[i]; pos.push(...p); nrm.push(...wn.map((q) => Math.round(q * 127)));
@@ -9938,6 +9938,14 @@ function __master() {
         P.needsUpdate = !0; g.computeBoundingBox(); g.computeBoundingSphere(); });
       console.log('DBG L1 sofa verts ' + nv + ' dropped tris ' + nt);
     } catch (e) { console.error('DBG L1 failed', e); }
+    // ===== L2: remove west armchair (right side when facing the TV) =====
+    try { let nt = 0; const inA = (x, y, z) => x > 4.18 && x < 5.02 && z > -1.60 && z < -0.75 && y > 0.0 && y < 0.95;
+      it.children.forEach((m) => { if (!m.isMesh || !/^(accent_fabric|brass)$/.test(m.name) || !m.geometry.index) return; const g = m.geometry, P = g.attributes.position.array, I = g.index.array, out = [];
+        for (let k = 0; k < I.length; k += 3) { if ([0, 1, 2].every((q) => { const v = I[k + q] * 3; return inA(P[v], P[v + 1], P[v + 2]); })) { nt++; continue; } out.push(I[k], I[k + 1], I[k + 2]); }
+        if (out.length < I.length) g.setIndex(new lt(new I.constructor(out), 1)); });
+      console.log('DBG L2 armchair dropped ' + nt);
+      patch('rug_living', r0, [qy(4.47, 5.08, -1.62, -0.72, 0.0215)], [5.1, 6.2, 0.01, 0.03, -1.9, -0.5]); patch('floor_oak', r0, [qy(3.95, 4.475, -1.70, -0.66, 0.0025)], [4.6, 7.5, -0.01, 0.01, -0.3, 0.3], [0, 0, 1.0]); /* floor map has the chair AO painted in: sample 1m south */ // cover armchair shadow
+    } catch (e) { console.error('DBG L2 failed', e); }
     console.log('DBG master ok');
   } catch (e) { console.error('DBG master failed', e); }
 }
