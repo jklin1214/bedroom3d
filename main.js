@@ -9837,7 +9837,7 @@ function __master() {
       const S = [[-0.305, -0.185, -0.02, 2.795, -5.645, -2.47], [-2.725, 2.225, -0.02, 2.565, -2.495, -2.385], [-2.725, -2.605, -0.02, 2.795, -5.645, -2.47], [2.115, 2.225, -0.02, 2.565, -5.645, -2.47], [-3.605, -2.70, -0.02, 2.565, -3.645, -3.54]];
       const thin = (b) => { const w = b[1] - b[0] < b[5] - b[4]; return w ? [b[0] - 0.13, b[1] + 0.13, b[2], 2.83, b[4], b[5]] : [b[0], b[1], b[2], 2.83, b[4] - 0.13, b[5] + 0.13]; };
       const T = S.map(thin).concat([[-3.62, 2.64, 2.50, 2.85, -5.68, -2.37], [2.215, 2.62, -0.02, 2.795, -5.645, -2.40]]);
-      const I = [[-2.61, 2.12, -0.02, 2.799, -5.615, -2.49], [-3.70, -2.60, -0.02, 2.795, -5.70, -3.538], [2.215, 2.62, -0.02, 2.795, -5.645, -2.40], [2.55, 3.40, -0.02, 1.1, -5.42, -4.46], [2.55, 3.44, -0.02, 1.35, -5.62, -4.12], [3.44, 3.98, -0.02, 1.35, -5.05, -4.12], [-3.72, -2.55, -0.02, 2.62, -3.70, -3.47]]; // I4/I5: reading nook (chair rest, rug, lamp table) ; I6: storage door frame
+      const I = [[-2.61, 2.12, -0.02, 2.799, -5.615, -2.49], [-3.70, -2.60, -0.02, 2.795, -5.70, -3.538], [2.215, 2.62, -0.02, 2.795, -5.645, -2.40], [-99.5, -99.4, -99.5, -99.4, -99.5, -99.4], [-99.5, -99.4, -99.5, -99.4, -99.5, -99.4], [-99.5, -99.4, -99.5, -99.4, -99.5, -99.4], /* I3-I5 nook boxes neutralised: nook objects dropped permanently in L4, dining table now there */ [-3.72, -2.55, -0.02, 2.62, -3.70, -3.47]]; // I4/I5: reading nook (chair rest, rug, lamp table) ; I6: storage door frame
       const SKIP = /^(floor_oak.*|ktile|ceiling.*|cove|downlight|glass|frame|frost|sheer|curtain|outdoor|facade|slab|c_.*|play_.*|.*_pl|.*_mp)$/;
       const STRUCT = /^(wall|bwall|kwall_[gb]|kacc_[gb]|wall_kid|wall_kidp|kwall_[gb]_kid.*)$/;
       const TRIM = /^(skirting|molding|skirting_kidp?|molding_kidp?)$/;
@@ -9881,7 +9881,7 @@ function __master() {
           const ng = new _t(); ng.setAttribute('position', new lt(new Float32Array(pos), 3)); ng.setAttribute('normal', new lt(new Int8Array(nrm), 3, !0)); if (uvf) ng.setAttribute('uv', new lt(new Float32Array(uv), 2));
           ng.setAttribute('bake', new lt(new g.attributes.bake.array.constructor(bk), 3, g.attributes.bake.normalized)); if (g.attributes.color) { const c0 = Array.from(g.attributes.color.array.slice(0, 3)); ng.setAttribute('color', new lt(new Float32Array(pos.length).map((_, i) => c0[i % 3]), 3)); }
           ng.setAttribute('kidKeep', new lt(new Float32Array(kk), 1)); fp.geometry = ng; console.log('DBG play3 floor B0 ' + B0 + ' E ' + bE + ' S ' + bS); } }
-      grab(() => { patch('floor_oak', r0, [qy(2.625, 3.44, -5.60, -4.12, 0.0025), qy(3.44, 3.98, -5.05, -4.12, 0.0025)], [3.9, 4.9, -0.01, 0.01, -4.9, -4.0]); }); // reading-nook floor (chair shadow) in play mode
+      patch('floor_oak', r0, [qy(2.625, 3.44, -5.60, -4.12, 0.0025), qy(3.44, 3.98, -5.05, -4.12, 0.0025)], [3.9, 4.9, -0.01, 0.01, -4.9, -4.0]); // nook floor (permanent since L4) // reading-nook floor (chair shadow) in play mode
       // 3b: north wall strip in former storage corner
       grab(() => { patch('wall', r0, [qz(-3.605, -2.48, 0, 2.795, -5.648, 1), qz(-3.605, -2.48, 0, 2.795, -5.648, -1)], [2.20, 2.23, 0.3, 2.4, 2.2, 3.5]); });
       { const ref = it.children.find((c) => c.name === 'wall_mp' && c.geometry.attributes.bake); const rb = ref ? Array.from(ref.geometry.attributes.bake.array.slice(0, 3)) : [16700, 16300, 15500]; PL.forEach((c) => { const B = c.geometry.attributes.bake; if (B && /^wall/.test(c.name)) { for (let i = 0; i < B.array.length; i++) B.array[i] = Math.round(rb[i % 3] * [1.03, 1.01, 0.97][i % 3]); B.needsUpdate = !0; } }); }
@@ -9953,6 +9953,30 @@ function __master() {
         if (out.length < I.length) g.setIndex(new lt(new I.constructor(out), 1)); });
       console.log('DBG L3 side table dropped ' + nt);
     } catch (e) { console.error('DBG L3 failed', e); }
+    // ===== L4: dining table + chairs moved off the island into the nook between sofa and west bookcase (rotated, end chair to the south) =====
+    try {
+      const dropBox = (re, B) => { let nt = 0; it.children.forEach((m) => { if (!m.isMesh || !re.test(m.name) || !m.geometry.index) return; const g = m.geometry, P = g.attributes.position.array, I = g.index.array, out = [];
+        for (let k = 0; k < I.length; k += 3) { const ins = (b) => [0, 1, 2].every((q) => { const v = I[k + q] * 3; return P[v] > b[0] && P[v] < b[1] && P[v + 1] > b[2] && P[v + 1] < b[3] && P[v + 2] > b[4] && P[v + 2] < b[5]; }); if (B.some(ins)) { nt++; continue; } out.push(I[k], I[k + 1], I[k + 2]); }
+        if (out.length < I.length) g.setIndex(new lt(new I.constructor(out), 1)); }); return nt; };
+      // nook: reading chair, rug, lamp table
+      const nk = dropBox(/^(velvet_dark|rug2|counter|vase|shade|brass|metal|bulb|decor.*|leaves|accent_fabric|linen.*|books)$/, [[2.55, 3.44, -0.01, 1.35, -5.62, -4.10], [3.44, 3.98, -0.01, 1.35, -5.06, -4.10]]);
+      // dining set: clone tris (rotated) then drop originals
+      const DB = [-3.565, -0.95, -0.005, 1.05, -0.60, 1.35], cx = -2.51, cz = 0.39, Tx = 3.79, Tz = -3.88, DN = /^(counter|cabinet|brass|chair_fabric|decor.*|bulb|fruit|dark|oak|ceramic|vase|leaves|chrome|metal|linen.*|glass)$/, BX = (n) => n === 'counter' ? [-3.66, DB[1], DB[2], 0.80, DB[4], DB[5]] : DB;
+      let nc = 0; const rep = [];
+      it.children.slice().forEach((m) => { if (!m.isMesh || !DN.test(m.name) || !m.geometry.index) return; const D0 = BX(m.name), g = m.geometry, P = g.attributes.position.array, I = g.index.array, sel = [];
+        for (let k = 0; k < I.length; k += 3) if ([0, 1, 2].every((q) => { const v = I[k + q] * 3; return P[v] > D0[0] && P[v] < D0[1] && P[v + 1] > D0[2] && P[v + 1] < D0[3] && P[v + 2] > D0[4] && P[v + 2] < D0[5]; })) sel.push(I[k], I[k + 1], I[k + 2]);
+        if (!sel.length) return; const ng = new _t();
+        for (const key in g.attributes) { const a = g.attributes[key], sz = a.itemSize, arr = new a.array.constructor(sel.length * sz); sel.forEach((vi, j) => { for (let c = 0; c < sz; c++) arr[j * sz + c] = a.array[vi * sz + c]; });
+          if (key === 'position') for (let j = 0; j < sel.length; j++) { const x = arr[j * 3], z = arr[j * 3 + 2]; arr[j * 3] = Tx - (z - cz); arr[j * 3 + 2] = Tz + (x - cx); }
+          if (key === 'normal') for (let j = 0; j < sel.length; j++) { const x = arr[j * 3], z = arr[j * 3 + 2]; arr[j * 3] = -z; arr[j * 3 + 2] = x; }
+          ng.setAttribute(key, new lt(arr, sz, a.normalized)); }
+        ng.setAttribute('kidKeep', new lt(new Float32Array(sel.length).fill(1), 1)); ng.computeBoundingBox(); ng.computeBoundingSphere();
+        const nm = new dt(ng, m.material); nm.name = m.name + '_dn'; nm.userData = m.userData; nm.castShadow = nm.receiveShadow = !0; it.add(nm); nc += sel.length / 3;
+        const bb = ng.boundingBox; rep.push(m.name + ':' + sel.length / 3 + '[' + [bb.min.x, bb.max.x, bb.min.z, bb.max.z].map((q) => q.toFixed(2)) + ']'); });
+      const nd = dropBox(/^(cabinet|brass|chair_fabric|decor.*|bulb|fruit|dark|oak|ceramic|vase|leaves|chrome|metal|linen.*|glass)$/, [DB]) + dropBox(/^counter$/, [BX('counter')]);
+      patch('floor_oak', r0, [qy(-3.58, -1.45, -0.50, 1.15, 0.0025)], [-3.5, -1.0, -0.01, 0.01, 1.2, 2.1], [1.6, 0, -1.6]); // old dining footprint: floor map has AO painted in; sample along the vein direction
+      console.log('DBG L4 nook ' + nk + ' moved ' + nc + ' dropped ' + nd + ' ' + rep.join(' '));
+    } catch (e) { console.error('DBG L4 failed', e); }
     console.log('DBG master ok');
   } catch (e) { console.error('DBG master failed', e); }
 }
