@@ -9974,7 +9974,7 @@ function __master() {
         const nm = new dt(ng, m.material); nm.name = m.name + '_dn'; nm.userData = m.userData; nm.castShadow = nm.receiveShadow = !0; it.add(nm); nc += sel.length / 3;
         const bb = ng.boundingBox; rep.push(m.name + ':' + sel.length / 3 + '[' + [bb.min.x, bb.max.x, bb.min.z, bb.max.z].map((q) => q.toFixed(2)) + ']'); });
       const nd = dropBox(/^(cabinet|brass|chair_fabric|decor.*|bulb|fruit|dark|oak|ceramic|vase|leaves|chrome|metal|linen.*|glass)$/, [DB]) + dropBox(/^counter$/, [BX('counter')]);
-      patch('floor_oak', r0, [qy(-3.58, -1.45, -0.50, 1.15, 0.0025)], [-3.5, -1.0, -0.01, 0.01, 1.2, 2.1], [1.6, 0, -1.6]); // old dining footprint: floor map has AO painted in; sample along the vein direction
+      // (L6) old dining footprint now fixed in the floor texture itself, see L6 below
       console.log('DBG L4 nook ' + nk + ' moved ' + nc + ' dropped ' + nd + ' ' + rep.join(' '));
     } catch (e) { console.error('DBG L4 failed', e); }
     // ===== L5: island back to 4 bar stools: clone the stool at z~-0.77 to z~0.0 and z~0.77 =====
@@ -9992,6 +9992,49 @@ function __master() {
           if (!di) { const bb = ng.boundingBox; rp.push(m.name + ':' + sel.length / 3 + '[' + [bb.min.x, bb.max.x, bb.min.y, bb.max.y, bb.min.z - dz, bb.max.z - dz].map((q) => q.toFixed(2)) + ']'); } }); });
       console.log('DBG L5 stools ' + ns + ' ' + rp.join(' '));
     } catch (e) { console.error('DBG L5 failed', e); }
+    // ===== L6: remove the old dining-table AO blob from the plan-wide floor texture (keeps veins: divide out low-freq tone) =====
+    try {
+      const fm = it.children.find((m) => m.isMesh && m.name === 'floor_oak'), tx = fm && fm.material.map, im = tx && tx.image;
+      const g = fm.geometry, P = g.attributes.position, UV = g.attributes.uv; let a = null, b = null;
+      for (let v = 0; v < P.count && !b; v++) { if (P.getY(v) > 0.05) continue; if (!a) a = v; else if (Math.abs(P.getX(v) - P.getX(a)) > 2 && Math.abs(P.getZ(v) - P.getZ(a)) > 2) b = v; }
+      const ku = (UV.getX(b) - UV.getX(a)) / (P.getX(b) - P.getX(a)), cu = UV.getX(a) - ku * P.getX(a), kv = (UV.getY(b) - UV.getY(a)) / (P.getZ(b) - P.getZ(a)), cv = UV.getY(a) - kv * P.getZ(a);
+      const Wd = im.width, Ht = im.height, cvs = document.createElement('canvas'); cvs.width = Wd; cvs.height = Ht; const c2 = cvs.getContext('2d'); c2.drawImage(im, 0, 0);
+      const px = (x) => (ku * x + cu) * Wd, py = (z) => (tx.flipY ? 1 - (kv * z + cv) : kv * z + cv) * Ht;
+      const X0 = -3.50, X1 = -1.10, Z0 = -0.75, Z1 = 1.45, M = 0.35; // footprint + margin (m)
+      const xa = Math.floor(Math.min(px(X0 - M), px(X1 + M))), xb = Math.ceil(Math.max(px(X0 - M), px(X1 + M))), ya = Math.floor(Math.min(py(Z0 - M), py(Z1 + M))), yb = Math.ceil(Math.max(py(Z0 - M), py(Z1 + M)));
+      const w = xb - xa, h = yb - ya, D = c2.getImageData(xa, ya, w, h), d = D.data, L = new Float32Array(w * h);
+      for (let i = 0; i < w * h; i++) L[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+      const ppm = Math.abs(px(1) - px(0)), R = Math.max(4, Math.round(ppm * 0.25));
+      // separable box blur x2 (approx gaussian), vein-robust: clamp dark vein texels to the local median-ish tone first
+      const blur = (src) => { const t = new Float32Array(w * h), o = new Float32Array(w * h);
+        for (let y = 0; y < h; y++) { let s = 0, n = 0; for (let x = -R; x < w + R; x++) { if (x + R < w) { s += src[y * w + x + R]; n++; } if (x - R - 1 >= 0) { s -= src[y * w + x - R - 1]; n--; } if (x >= 0 && x < w) t[y * w + x] = s / n; } }
+        for (let x = 0; x < w; x++) { let s = 0, n = 0; for (let y = -R; y < h + R; y++) { if (y + R < h) { s += t[(y + R) * w + x]; n++; } if (y - R - 1 >= 0) { s -= t[(y - R - 1) * w + x]; n--; } if (y >= 0 && y < h) o[y * w + x] = s / n; } } return o; };
+      const B1 = blur(L), Lc = L.map((q, i) => Math.max(q, B1[i] * 0.97)), Bl = blur(blur(Lc));
+      // target tone: median of ring (outside footprint) texels
+      const inF = (x, y) => { const wx = X0 + (x - (px(X0) - xa)) / (px(X1) - px(X0)) * (X1 - X0); return [wx, Z0 + (y - (py(Z0) - ya)) / (py(Z1) - py(Z0)) * (Z1 - Z0)]; };
+      const ring = []; for (let y = 0; y < h; y += 3) for (let x = 0; x < w; x += 3) { const [wx, wz] = inF(x, y); if ((wx < X0 || wx > X1 || wz < Z0 || wz > Z1) && wx > -3.5) ring.push(Bl[y * w + x]); }
+      ring.sort((p, q) => p - q); const T = ring[ring.length >> 1] || 230;
+      let gmax = 0;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const [wx, wz] = inF(x, y); if (wx < -3.52) continue; // keep island's own contact shadow
+        const e = Math.min(wx - (X0 - M), (X1 + M) - wx, wz - (Z0 - M), (Z1 + M) - wz), f = Math.max(0, Math.min(1, e / M)), fs = f * f * (3 - 2 * f), i = y * w + x;
+        const gn = 1 + (Math.max(1, T / Bl[i]) - 1) * fs; gmax = Math.max(gmax, gn); for (let c = 0; c < 3; c++) d[i * 4 + c] = Math.min(255, d[i * 4 + c] * gn); }
+      c2.putImageData(D, xa, ya); tx.image = cvs; tx.needsUpdate = !0;
+      console.log('DBG L6 floortex ' + Wd + 'x' + Ht + ' rect ' + [xa, ya, w, h] + ' ppm ' + ppm.toFixed(1) + ' T ' + T.toFixed(1) + ' gmax ' + gmax.toFixed(3) + ' flipY ' + tx.flipY);
+    } catch (e) { console.error('DBG L6 failed', e); }
+    // ===== L6b: floor vertex bake under old dining footprint: refill from surrounding vertices (IDW), only brighten =====
+    try {
+      const fm = it.children.find((m) => m.isMesh && m.name === 'floor_oak'), g = fm.geometry, P = g.attributes.position, B = g.attributes.bake;
+      const X0 = -3.52, X1 = -0.95, Z0 = -0.85, Z1 = 1.55, M = 0.7, ins = (x, z) => x > X0 && x < X1 && z > Z0 && z < Z1, inR = (x, z) => x > X0 - 0.02 && x < X1 + M && z > Z0 - M && z < Z1 + M && !ins(x, z);
+      const ring = [], tgt = [];
+      for (let v = 0; v < P.count; v++) { const x = P.getX(v), y = P.getY(v), z = P.getZ(v); if (y > 0.05) continue; if (ins(x, z)) tgt.push(v); else if (inR(x, z)) ring.push(v); }
+      const fix = () => { const arr = B.array; let ch = 0, dmax = 0;
+      tgt.forEach((v) => { const x = P.getX(v), z = P.getZ(v); let ws = 0; const acc = [0, 0, 0];
+        ring.forEach((u) => { const dx = P.getX(u) - x, dz = P.getZ(u) - z, w = 1 / Math.pow(dx * dx + dz * dz + 0.01, 1.5); ws += w; for (let c = 0; c < 3; c++) acc[c] += w * arr[u * 3 + c]; });
+        if (!ws) return; for (let c = 0; c < 3; c++) { const nv = Math.max(arr[v * 3 + c], acc[c] / ws); dmax = Math.max(dmax, nv - arr[v * 3 + c]); arr[v * 3 + c] = nv; } ch++; });
+      B.needsUpdate = !0; return [ch, dmax]; };
+      const r6 = fix(); const _Fy6 = Fy; Fy = function (...a) { const o = _Fy6.apply(this, a); fix(); return o; };
+      console.log('DBG L6b bake tgt ' + tgt.length + ' ring ' + ring.length + ' changed ' + r6[0] + ' dmax ' + r6[1].toFixed(1));
+    } catch (e) { console.error('DBG L6b failed', e); }
     console.log('DBG master ok');
   } catch (e) { console.error('DBG master failed', e); }
 }
