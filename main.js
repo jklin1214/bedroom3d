@@ -9837,13 +9837,13 @@ function __master() {
       const S = [[-0.305, -0.185, -0.02, 2.795, -5.645, -2.47], [-2.725, 2.225, -0.02, 2.565, -2.495, -2.385], [-2.725, -2.605, -0.02, 2.795, -5.645, -2.47], [2.115, 2.225, -0.02, 2.565, -5.645, -2.47], [-3.605, -2.70, -0.02, 2.565, -3.645, -3.54]];
       const thin = (b) => { const w = b[1] - b[0] < b[5] - b[4]; return w ? [b[0] - 0.13, b[1] + 0.13, b[2], 2.83, b[4], b[5]] : [b[0], b[1], b[2], 2.83, b[4] - 0.13, b[5] + 0.13]; };
       const T = S.map(thin).concat([[-3.62, 2.64, 2.50, 2.85, -5.68, -2.37], [2.215, 2.62, -0.02, 2.795, -5.645, -2.40]]);
-      const I = [[-2.61, 2.12, -0.02, 2.799, -5.615, -2.49], [-3.70, -2.60, -0.02, 2.795, -5.70, -3.538], [2.215, 2.62, -0.02, 2.795, -5.645, -2.40], [2.55, 3.40, -0.02, 1.1, -5.42, -4.46]];
+      const I = [[-2.61, 2.12, -0.02, 2.799, -5.615, -2.49], [-3.70, -2.60, -0.02, 2.795, -5.70, -3.538], [2.215, 2.62, -0.02, 2.795, -5.645, -2.40], [2.55, 3.40, -0.02, 1.1, -5.42, -4.46], [2.55, 3.44, -0.02, 1.35, -5.62, -4.12], [3.44, 3.98, -0.02, 1.35, -5.05, -4.12], [-3.72, -2.55, -0.02, 2.62, -3.70, -3.47]]; // I4/I5: reading nook (chair rest, rug, lamp table) ; I6: storage door frame
       const SKIP = /^(floor_oak.*|ktile|ceiling.*|cove|downlight|glass|frame|frost|sheer|curtain|outdoor|facade|slab|c_.*|play_.*|.*_pl|.*_mp)$/;
       const STRUCT = /^(wall|bwall|kwall_[gb]|kacc_[gb]|wall_kid|wall_kidp|kwall_[gb]_kid.*)$/;
       const TRIM = /^(skirting|molding|skirting_kidp?|molding_kidp?)$/;
       const HIDE = /^molding_kid.*$|^(kacc|kfurn|kbed|kbed2)_[gb](_.*)?$|^(kfurn|kbed|kbed2)_[gb]/;
       const cnd = (B) => B.map((b) => `(vPw.x>${b[0]}&&vPw.x<${b[1]}&&vPw.y>${b[2]}&&vPw.y<${b[3]}&&vPw.z>${b[4]}&&vPw.z<${b[5]})`).join('||');
-      const boxesFor = (n) => n === 'ceiling' ? [[-3.62, 2.10, 2.40, 2.79, -5.70, -2.50]] : SKIP.test(n) ? null : n === 'metal' ? S.concat([[-2.61, 2.12, -0.02, 2.70, -5.615, -2.49], I[1], I[2], I[3]]) : STRUCT.test(n) ? S : TRIM.test(n) ? T : S.concat(I);
+      const boxesFor = (n) => n === 'ceiling' ? [[-3.62, 2.10, 2.40, 2.79, -5.70, -2.50]] : SKIP.test(n) ? null : n === 'metal' ? S.concat([[-2.61, 2.12, -0.02, 2.70, -5.615, -2.49], I[1], I[2], I[3], I[4], I[5], I[6]]) : STRUCT.test(n) ? S : TRIM.test(n) ? T : S.concat(I);
       const done = new WeakMap();
       const patchMat = (mt, B) => { if (!mt || done.has(mt)) return; done.set(mt, 1); const c = cnd(B), prev = mt.onBeforeCompile, pk = mt.customProgramCacheKey;
         mt.onBeforeCompile = function (sh, rr) { prev && prev.call(this, sh, rr); sh.uniforms.uPlay = U;
@@ -9881,6 +9881,7 @@ function __master() {
           const ng = new _t(); ng.setAttribute('position', new lt(new Float32Array(pos), 3)); ng.setAttribute('normal', new lt(new Int8Array(nrm), 3, !0)); if (uvf) ng.setAttribute('uv', new lt(new Float32Array(uv), 2));
           ng.setAttribute('bake', new lt(new g.attributes.bake.array.constructor(bk), 3, g.attributes.bake.normalized)); if (g.attributes.color) { const c0 = Array.from(g.attributes.color.array.slice(0, 3)); ng.setAttribute('color', new lt(new Float32Array(pos.length).map((_, i) => c0[i % 3]), 3)); }
           ng.setAttribute('kidKeep', new lt(new Float32Array(kk), 1)); fp.geometry = ng; console.log('DBG play3 floor B0 ' + B0 + ' E ' + bE + ' S ' + bS); } }
+      grab(() => { patch('floor_oak', r0, [qy(2.625, 3.44, -5.60, -4.12, 0.0025), qy(3.44, 3.98, -5.05, -4.12, 0.0025)], [3.9, 4.9, -0.01, 0.01, -4.9, -4.0]); }); // reading-nook floor (chair shadow) in play mode
       // 3b: north wall strip in former storage corner
       grab(() => { patch('wall', r0, [qz(-3.605, -2.48, 0, 2.795, -5.648, 1), qz(-3.605, -2.48, 0, 2.795, -5.648, -1)], [2.20, 2.23, 0.3, 2.4, 2.2, 3.5]); });
       { const ref = it.children.find((c) => c.name === 'wall_mp' && c.geometry.attributes.bake); const rb = ref ? Array.from(ref.geometry.attributes.bake.array.slice(0, 3)) : [16700, 16300, 15500]; PL.forEach((c) => { const B = c.geometry.attributes.bake; if (B && /^wall/.test(c.name)) { for (let i = 0; i < B.array.length; i++) B.array[i] = Math.round(rb[i % 3] * [1.03, 1.01, 0.97][i % 3]); B.needsUpdate = !0; } }); }
@@ -9891,7 +9892,7 @@ function __master() {
       const pal = ['#F2C6B4', '#BFD8C8', '#C9D6EA', '#F3E1A6', '#E7D3E8', '#F6F1E7'].map((c) => std(c));
       const MX0 = -2.3, MZ0 = -5.2; for (let i = 0; i < 6; i++) for (let j = 0; j < 4; j++) box(pal[(i + j) % 4], MX0 + i * 0.6 + 0.004, MX0 + (i + 1) * 0.6 - 0.004, 0.003, 0.02, MZ0 + j * 0.6 + 0.004, MZ0 + (j + 1) * 0.6 - 0.004);
       const wood = std('#E8D9C0', { roughness: 0.6 });
-      [[-5.5, -4.6], [-4.55, -3.75]].forEach(([z0, z1]) => { const x0 = -3.58, x1 = -3.24; [0, 0.34, 0.68].forEach((y) => box(wood, x0, x1, y, y + 0.02, z0, z1));
+      if (0) [[-5.5, -4.6], [-4.55, -3.75]].forEach(([z0, z1]) => { const x0 = -3.58, x1 = -3.24; [0, 0.34, 0.68].forEach((y) => box(wood, x0, x1, y, y + 0.02, z0, z1));
         [0, 0.5, 1].forEach((t) => { const z = z0 + t * (z1 - z0); box(wood, x0, x1, 0, 0.70, z - 0.01, z + 0.01); });
         [0, 1].forEach((r) => [0, 1].forEach((k) => box(pal[(r * 2 + k + 1) % 6], x0 + 0.03, x1 - 0.03, 0.03 + r * 0.34, 0.27 + r * 0.34, z0 + 0.05 + k * (z1 - z0) / 2, z0 - 0.05 + (k + 1) * (z1 - z0) / 2))); });
       [[-0.6, -3.3, 0.3, 0], [-0.25, -3.25, 0.25, 1], [-0.45, -3.3, 0.22, 2, 0.3], [0.3, -3.9, 0.35, 3], [0.62, -3.95, 0.28, 4]].forEach(([x, z, s, c, y = 0]) => { const b = box(pal[c], x - s / 2, x + s / 2, 0.02 + y, 0.02 + y + s, z - s / 2, z + s / 2); b.rotation.y = c * 0.4; });
