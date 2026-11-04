@@ -9706,6 +9706,7 @@ function __master() {
           const D = det(A); if (Math.abs(D) < 1e-9) return [0, 0, S.length ? UV.getComponent(S[0], comp) : 0];
           return [0, 1, 2].map((i) => det(A.map((row, ri) => row.map((e, ci) => (ci === i ? y[ri] : e)))) / D); };
         const fu = UV ? fit(0) : null, fv = UV ? fit(1) : null;
+        if (name === 'bwall') console.log('DBG patch bwall S=' + S.length + ' uv ' + (UV ? fu.map((q) => q.toFixed(3)) + '/' + fv.map((q) => q.toFixed(3)) : '-') + ' bake ' + (B ? [0, 1, 2].map((i) => { const v = S.map((q) => B.getComponent(q, i)).sort((x, y) => x - y); return v.length ? v[v.length >> 1].toFixed(3) : -1; }) : '-'));
         const avg = (a) => [0, 1, 2].map((i) => { const v = S.map((q) => a.getComponent(q, i)).sort((x, y) => x - y); return v.length ? v[v.length >> 1] : 0.5; });
         const ab = B ? avg(B) : null, ac = C ? avg(C) : null;
         [0, 1, 2, 0, 2, 3].forEach((i) => { const p = wc[i]; pos.push(...p); nrm.push(...wn.map((q) => Math.round(q * 127)));
@@ -9750,6 +9751,22 @@ function __master() {
       for (let v = 0; v < P.count; v++) { const d = F(m.name, P.getX(v), P.getY(v), P.getZ(v)); if (d) { P.setZ(v, P.getZ(v) + d); h++; } }
       if (h) { P.needsUpdate = !0; m.geometry.computeBoundingSphere(); m.geometry.computeBoundingBox(); moved.push(m.name + ':' + h); } });
     console.log('DBG step1 moved ' + moved.join(' '));
+    // ===== v7a: master bath extended south to the user's red line (partition bath face z=2.92, bedroom face z=3.00) =====
+    { const DW = 0.297, DE = 0.994, ST = /^(wall|bwall|skirting|molding|door|dleaf_[oc]|dmold_[oc]|dhw_[oc])$/, NOGEN = /^(slab|floor.*|btile|ceiling.*|cove|downlight|rug.*)$/; const mv = [];
+      meshes(/./).forEach((m) => { if (!m.geometry.index) return; const P = m.geometry.attributes.position, n = m.name; let h = 0;
+        for (let v = 0; v < P.count; v++) { const x = P.getX(v), y = P.getY(v), z = P.getZ(v); let d = 0;
+          if (ST.test(n) && x > 3.90 && x < 6.17 && z > 2.59 && z < 2.83 && y > -0.05 && y < 2.81) d = DW;                       // west part partition + door + bath west wall end
+          else if (ST.test(n) && x > 5.95 && x < 6.17 && z >= 2.02 && z <= 2.59 && !(n === 'molding' && z > 2.10 && z < 2.13) && y > -0.05 && y < 2.81) d = 2.96 - z;                // old stub between bath parts: fold into new wall thickness
+          else if (/^dleaf_o|^dmold_o|^dhw_o/.test(n) && x > 4.7 && x < 5.0 && z > 1.85 && z < 2.6) d = DW;                         // open door leaf follows the door
+          else if (n === 'bwall' && x > 8.70) d = 0;                                                                              // pier tile face stays (patched below instead of stretched)
+          else if (x > 5.95 && x < 8.746 && z > 1.92 && z < 2.13 && y > -0.05 && y < 2.81 && (ST.test(n) || n === 'metal' || (!EXC.test(n) && !NOGEN.test(n)))) d = DE; // east partition + bedroom TV/shelf + rail/molding ends
+          if (d) { P.setZ(v, z + d); h++; } }
+        if (h) { P.needsUpdate = !0; m.geometry.computeBoundingSphere(); m.geometry.computeBoundingBox(); mv.push(n + ':' + h); } });
+      console.log('DBG v7a moved ' + mv.join(' '));
+      // even out the bedroom face light-map across the new partition (west part came from a darker spot)
+      meshes(/^wall$/).forEach((m) => { const P = m.geometry.attributes.position, N = m.geometry.attributes.normal, B = m.geometry.attributes.bake; if (!B) return; const ref = [[], [], []], tgt = [];
+        for (let v = 0; v < P.count; v++) { if (Math.abs(P.getZ(v) - 3.0015) > 0.004 || N.getZ(v) < 0.9) continue; const x = P.getX(v); if (x > 6.3 && x < 8.6) for (let k = 0; k < 3; k++) ref[k].push(B.getComponent(v, k)); else if (x > 4.0 && x < 6.3) tgt.push(v); }
+        if (!ref[0].length) return; const md = ref.map((a) => (a.sort((p, q) => p - q), a[a.length >> 1])); tgt.forEach((v) => { for (let k = 0; k < 3; k++) B.setComponent(v, k, md[k]); }); B.needsUpdate = !0; console.log('DBG v7a bake even ' + tgt.length + ' ' + md.map((q) => q.toFixed(3))); }); }
     // ---------- old wall / living ceiling band / floors under the new master strip: exact shader cut ----------
     addDisc(/^(wall|skirting|molding)$/, r0, [2.205, 9.215, -0.02, 2.81, 1.84, 2.045]);
     addDisc(/^molding$/, r0, [2.205, 9.215, 2.4, 2.81, 1.55, 2.045]);
@@ -9773,6 +9790,9 @@ function __master() {
     patch('btile', r0, [qy(8.72, 9.22, 1.26, 1.94, 0.0015)], [4.2, 5.9, -0.01, 0.01, 1.0, 2.5]);
     patch('floor_oak', r0, [qy(2.21, 4.07, 0.85, 2.075, 0.0015)], [4.3, 6.0, -0.01, 0.01, 3.95, 5.5]);                   // corridor strip
     patch('floor_oak', r0, [qy(4.06, 6.06, 2.66, 3.885, 0.0015), qy(5.96, 8.745, 1.99, 3.19, 0.0015), qy(8.73, 9.22, 1.94, 2.45, 0.0015)], [4.3, 6.0, -0.01, 0.01, 4.8, 5.8]); // bedroom gains old bath area
+    // v7a: tile (bwall) faces for the bath extension: new partition bath face (east part) + pier face
+    // (bath south faces are 'wall' material in the original west part too -> no tile patch needed)
+    patch('bwall', r0, [qx(8.727, 0, 2.80, 1.90, 2.918, -1)], [8.70, 8.74, -0.01, 2.81, 1.0, 2.0]);   // pier face inside bath extension: tile like the rest of that wall
     applyDisc();
     // ---------- light-map consistency for patches is flat by construction; nothing stale moved except rigid blocks ----------
     // ---------- shear detector (after) ----------
