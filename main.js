@@ -9926,6 +9926,18 @@ function __master() {
       window.__play = (v) => { on = v ? 1 : 0; apply(); lbl(); };
       console.log('DBG play3 ok PL ' + PL.length);
     } catch (e) { console.error('DBG play3 failed', e); }
+    // ===== L1: living sofa 6 seats -> 4 (remove the two middle seat modules 5.98..7.14, close up symmetrically about x=6.56) =====
+    try { const A0 = 5.98, A1 = 7.14, C = (A0 + A1) / 2, H = (A1 - A0) / 2, inS = (x, y, z) => x > 4.6 && x < 8.52 && z > -3.62 && z < -2.62 && y > -0.01 && y < 1.0;
+      const tgt = { sofa: 1, accent_fabric: 1, dark: 1 }; let nv = 0, nt = 0;
+      it.children.forEach((m) => { if (!m.isMesh || !tgt[m.name] || !m.geometry.index) return; const g = m.geometry, P = g.attributes.position, I = g.index.array, sel = new Uint8Array(P.count);
+        for (let v = 0; v < P.count; v++) if (inS(P.getX(v), P.getY(v), P.getZ(v))) sel[v] = 1;
+        const out = []; for (let k = 0; k < I.length; k += 3) { const a = I[k], b = I[k + 1], c = I[k + 2];
+          if (sel[a] && sel[b] && sel[c] && [a, b, c].every((v) => P.getX(v) > A0 + 0.004 && P.getX(v) < A1 - 0.004)) { nt++; continue; } out.push(a, b, c); }
+        if (out.length < I.length) g.setIndex(new lt(new I.constructor(out), 1));
+        for (let v = 0; v < P.count; v++) { if (!sel[v]) continue; const x = P.getX(v); P.setX(v, x <= A0 + 0.001 ? x + H : x >= A1 - 0.001 ? x - H : C); nv++; }
+        P.needsUpdate = !0; g.computeBoundingBox(); g.computeBoundingSphere(); });
+      console.log('DBG L1 sofa verts ' + nv + ' dropped tris ' + nt);
+    } catch (e) { console.error('DBG L1 failed', e); }
     console.log('DBG master ok');
   } catch (e) { console.error('DBG master failed', e); }
 }
