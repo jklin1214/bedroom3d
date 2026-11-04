@@ -5602,7 +5602,8 @@ cl.forEach((i) => {
     Ry.appendChild(e),
     (xi[i.id] = e));
   const KEEP = { all: "全屋俯視", living: "客廳", island: "餐廚中島", mbed: "主臥", mbath: "主浴", kids1: "小孩房" };
-  if (KEEP[i.id]) e.textContent = KEEP[i.id]; else e.style.display = "none";
+  e.dataset.view = i.id;
+  if (KEEP[i.id]) e.textContent = KEEP[i.id]; else { e.style.display = "none"; e.dataset.hidden = "1"; }
 });
 { const kv = cl.find((q) => q.id === "kids1"); const b = document.createElement("button"); b.type = "button"; b.textContent = "開放遊戲區"; b.setAttribute("aria-pressed", "false");
   b.onclick = () => { window.__play && window.__play(1); kv && Yh(kv); }; Ry.appendChild(b); xi.__playview = b; }
