@@ -5598,7 +5598,7 @@ cl.forEach((i) => {
   ((e.type = "button"),
     (e.textContent = i.name),
     e.setAttribute("aria-pressed", "false"),
-    (e.onclick = () => { if (window.__PLAYON && window.__play && i.id !== "all") window.__play(0); Yh(i); }),
+    (e.onclick = () => Yh(i)),
     Ry.appendChild(e),
     (xi[i.id] = e));
   const KEEP = { all: "全屋俯視", living: "客廳", island: "餐廚中島", mbed: "主臥", mbath: "主浴", kids1: "小孩房" };
