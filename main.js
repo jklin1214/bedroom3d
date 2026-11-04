@@ -9946,6 +9946,13 @@ function __master() {
       console.log('DBG L2 armchair dropped ' + nt);
       patch('rug_living', r0, [qy(4.47, 5.08, -1.62, -0.72, 0.0215)], [5.1, 6.2, 0.01, 0.03, -1.9, -0.5]); patch('floor_oak', r0, [qy(3.95, 4.475, -1.70, -0.66, 0.0025)], [4.6, 7.5, -0.01, 0.01, -0.3, 0.3], [0, 0, 1.0]); /* floor map has the chair AO painted in: sample 1m south */ // cover armchair shadow
     } catch (e) { console.error('DBG L2 failed', e); }
+    // ===== L3: remove the small side table + lamp at the sofa's west end =====
+    try { let nt = 0; const inT = (x, y, z) => x > 4.08 && x < 4.68 && z > -3.70 && z < -3.08 && y > -0.005 && y < 1.1;
+      it.children.forEach((m) => { if (!m.isMesh || !/^(counter|vase|shade|brass|bulb|metal|decor.*)$/.test(m.name) || !m.geometry.index) return; const g = m.geometry, P = g.attributes.position.array, I = g.index.array, out = [];
+        for (let k = 0; k < I.length; k += 3) { if ([0, 1, 2].every((q) => { const v = I[k + q] * 3; return inT(P[v], P[v + 1], P[v + 2]); })) { nt++; continue; } out.push(I[k], I[k + 1], I[k + 2]); }
+        if (out.length < I.length) g.setIndex(new lt(new I.constructor(out), 1)); });
+      console.log('DBG L3 side table dropped ' + nt);
+    } catch (e) { console.error('DBG L3 failed', e); }
     console.log('DBG master ok');
   } catch (e) { console.error('DBG master failed', e); }
 }
