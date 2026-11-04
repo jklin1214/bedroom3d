@@ -9688,7 +9688,7 @@ function __master() {
         mt.customProgramCacheKey = function () { return (pk ? pk.call(this) : '') + '|md' + m.uuid; }; mt.needsUpdate = !0; });
     });
     // flat patch quads using a mesh's material; bake/color/uv fitted from nearby verts
-    const patch = (name, r, quads, sb) => {
+    const patch = (name, r, quads, sb, sh) => {
       const m = meshes(new RegExp('^' + name + '$'))[0]; if (!m) return;
       const g = m.geometry, P = g.attributes.position, N = g.attributes.normal, UV = g.attributes.uv, B = g.attributes.bake, C = g.attributes.color;
       const pos = [], nrm = [], uv = [], bk = [], col = [];
@@ -9706,11 +9706,11 @@ function __master() {
           const D = det(A); if (Math.abs(D) < 1e-9) return [0, 0, S.length ? UV.getComponent(S[0], comp) : 0];
           return [0, 1, 2].map((i) => det(A.map((row, ri) => row.map((e, ci) => (ci === i ? y[ri] : e)))) / D); };
         const fu = UV ? fit(0) : null, fv = UV ? fit(1) : null;
-        if (name === 'bwall') console.log('DBG patch bwall S=' + S.length + ' uv ' + (UV ? fu.map((q) => q.toFixed(3)) + '/' + fv.map((q) => q.toFixed(3)) : '-') + ' bake ' + (B ? [0, 1, 2].map((i) => { const v = S.map((q) => B.getComponent(q, i)).sort((x, y) => x - y); return v.length ? v[v.length >> 1].toFixed(3) : -1; }) : '-'));
+        if (/^(bwall|btile|floor_oak)$/.test(name)) console.log('DBG patch ' + name + ' S=' + S.length + ' uv ' + (UV ? fu.map((q) => q.toFixed(3)) + '/' + fv.map((q) => q.toFixed(3)) : '-') + ' bake ' + (B ? [0, 1, 2].map((i) => { const v = S.map((q) => B.getComponent(q, i)).sort((x, y) => x - y); return v.length ? v[v.length >> 1].toFixed(3) : -1; }) : '-'));
         const avg = (a) => [0, 1, 2].map((i) => { const v = S.map((q) => a.getComponent(q, i)).sort((x, y) => x - y); return v.length ? v[v.length >> 1] : 0.5; });
         const ab = B ? avg(B) : null, ac = C ? avg(C) : null;
         [0, 1, 2, 0, 2, 3].forEach((i) => { const p = wc[i]; pos.push(...p); nrm.push(...wn.map((q) => Math.round(q * 127)));
-          if (UV) { const u = [p[ax[0]], p[ax[1]], 1]; uv.push(fu[0] * u[0] + fu[1] * u[1] + fu[2], fv[0] * u[0] + fv[1] * u[1] + fv[2]); }
+          if (UV) { const u = [p[ax[0]] + (sh ? sh[ax[0]] : 0), p[ax[1]] + (sh ? sh[ax[1]] : 0), 1]; uv.push(fu[0] * u[0] + fu[1] * u[1] + fu[2], fv[0] * u[0] + fv[1] * u[1] + fv[2]); }
           if (B) bk.push(...ab); if (C) col.push(...ac); });
       });
       const ng = new _t(); ng.setAttribute('position', new lt(new Float32Array(pos), 3)); ng.setAttribute('normal', new lt(new Int8Array(nrm), 3, !0));
@@ -9789,7 +9789,9 @@ function __master() {
     patch('wall', r0, [qz(8.73, 9.22, 0, 2.80, 2.01, 1)], [6.1, 8.6, 0.3, 2.4, 2.00, 2.02]);
     patch('btile', r0, [qy(8.72, 9.22, 1.26, 1.94, 0.0015)], [4.2, 5.9, -0.01, 0.01, 1.0, 2.5]);
     patch('floor_oak', r0, [qy(2.21, 4.07, 0.85, 2.075, 0.0015)], [4.3, 6.0, -0.01, 0.01, 3.95, 5.5]);                   // corridor strip
-    patch('floor_oak', r0, [qy(4.06, 6.06, 2.66, 3.885, 0.0015), qy(5.96, 8.745, 1.99, 3.19, 0.0015), qy(8.73, 9.22, 1.94, 2.45, 0.0015)], [4.3, 6.0, -0.01, 0.01, 4.8, 5.8]); // bedroom gains old bath area
+    // v7 floors: bedroom keeps wood only south of the new partition (z>=3.0); bath extension gets the bath floor tile
+    patch('floor_oak', r0, [qy(4.06, 6.06, 2.995, 3.885, 0.0015), qy(5.96, 8.745, 2.995, 3.19, 0.0015)], [6.3, 8.6, -0.01, 0.01, 3.25, 4.6], [0, 0, 1.0]); // bedroom strip (plan-wide floor map: sample wood 1m south)
+    patch('btile', r0, [qy(4.145, 5.97, 2.55, 2.92, 0.003), qy(5.96, 8.727, 1.85, 2.92, 0.003)], [4.3, 5.9, -0.01, 0.01, 0.9, 2.5], [0, 0, -1.0]); // bath extension (sample bath tile 1m north)
     // v7a: tile (bwall) faces for the bath extension: new partition bath face (east part) + pier face
     // (bath south faces are 'wall' material in the original west part too -> no tile patch needed)
     patch('bwall', r0, [qx(8.727, 0, 2.80, 1.90, 2.918, -1)], [8.70, 8.74, -0.01, 2.81, 1.0, 2.0]);   // pier face inside bath extension: tile like the rest of that wall
