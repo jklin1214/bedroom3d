@@ -10061,3 +10061,30 @@ function __master() {
 setTimeout(()=>{window.__rayO=(x,y)=>{Ff.setFromCamera({x,y},Be);return Ff.intersectObjects(Sa,!1);};window.__cl=cl;window.__cam=Be;window.__Oi=Oi;window.__Bi=Bi;window.__zt=zt;},1);
 
 setTimeout(()=>{window.__look=(x,z)=>Yh({id:"walk",kind:"eye",eyeW:Be.position.clone(),lookW:new A(x,Be.position.y-0.6,z),lens:17,out:0,ev:0.8});},1);
+setTimeout(()=>{try{const re=/^kfurn_/;it.children.forEach(o=>{if(!o.isMesh)return;const nm=(o.userData&&o.userData.name)||o.name||"";if(!re.test(nm))return;const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{if(m){m.flatShading=true;if("envMapIntensity" in m)m.envMapIntensity=0;if("roughness" in m)m.roughness=Math.max(m.roughness||0,0.85);if("metalness" in m)m.metalness=0;m.needsUpdate=true;}});});console.log("kfurn flatShading on");}catch(e){console.warn(e);}},50);
+setTimeout(()=>{try{let wallMat=null;it.children.forEach(o=>{if(!o.isMesh)return;const nm=((o.userData&&o.userData.name)||o.name||"");if(nm==="wall"&&o.material)wallMat=Array.isArray(o.material)?o.material[0]:o.material;});it.children.forEach(o=>{if(!o.isMesh)return;const nm=((o.userData&&o.userData.name)||o.name||"");if(!/^wall_ov/.test(nm))return;if(wallMat){const c=wallMat.clone();c.polygonOffset=true;c.polygonOffsetFactor=-1;c.polygonOffsetUnits=-4;c.needsUpdate=true;o.material=c;}else{const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{if(!m)return;m.polygonOffset=true;m.polygonOffsetFactor=-1;m.polygonOffsetUnits=-4;m.needsUpdate=true;});}});console.log("wall_ov polyOffset");}catch(e){console.warn(e);}},70);
+
+
+setTimeout(()=>{try{if(!/[?&#]closetDiag=1/.test(location.href))return;let n=0;(window.__it||it).children.forEach(o=>{if(!o.isMesh||!o.material)return;const nm=((o.userData&&o.userData.name)||o.name||"").toLowerCase();if(!/^kfurn_/.test(nm))return;let c=0xffff00;if(/door|leaf|dleaf|panel/.test(nm))c=0xff00ff;else if(/frame|jamb|trim|mold/.test(nm))c=0x00ffff;const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{if(m&&m.color){m.color=new THREE.Color(c);m.flatShading=true;m.needsUpdate=true;}});n++;});console.log("closetDiag colored",n);}catch(e){console.warn(e);}},100);
+
+setTimeout(()=>{try{
+  const LinearFilter=THREE.LinearFilter, Clamp=THREE.ClampToEdgeWrapping;
+  const fix=tex=>{
+    if(!tex||!tex.isTexture)return;
+    tex.generateMipmaps=false;
+    tex.minFilter=LinearFilter;
+    tex.magFilter=LinearFilter;
+    if(tex.wrapS!==undefined){tex.wrapS=Clamp;tex.wrapT=Clamp;}
+    tex.needsUpdate=true;
+  };
+  (window.__it||it).children.forEach(o=>{
+    if(!o.isMesh||!o.material)return;
+    const ms=Array.isArray(o.material)?o.material:[o.material];
+    ms.forEach(m=>{
+      if(!m)return;
+      ["map","lightMap","aoMap","emissiveMap","bumpMap","normalMap","roughnessMap","metalnessMap"].forEach(k=>fix(m[k]));
+    });
+  });
+  console.log("lightmap/tex no-mip LinearFilter ClampToEdge");
+}catch(e){console.warn(e);}},90);
+
