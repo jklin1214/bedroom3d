@@ -5421,13 +5421,15 @@ function Rf(i, e, t, n, s, r, o) {
           `#include <common>
 attribute vec3 bake;
 varying vec3 vBake;
+varying vec3 vPw128;
 uniform float bakeMax;
 uniform float specRef;`,
         )
         .replace(
           "#include <begin_vertex>",
           `#include <begin_vertex>
-vBake = bake * bake * bakeMax;` +
+vBake = bake * bake * bakeMax;
+vPw128 = ( modelMatrix * vec4( position, 1.0 ) ).xyz;` +
             (o
               ? `
 vBake *= 1.0 / ( 1.0 + dot( vBake, vec3( 0.2126, 0.7152, 0.0722 ) ) / ( ` +
@@ -5450,13 +5452,14 @@ transformed += objectNormal * ( 0.002 * smoothstep( 0.003, 0.03, dot( vBake, vec
           "#include <common>",
           `#include <common>
 varying vec3 vBake;
+varying vec3 vPw128;
 uniform vec3 bakeGain;
 uniform float specRef;`,
         )
         .replace(
           "#include <lights_fragment_maps>",
           `#include <lights_fragment_maps>
-irradiance += vBake * bakeGain * PI;
+irradiance += ( ( vPw128.x > 7.5 && vPw128.x < 9.3 && abs( vPw128.z - 1.8654 ) < 0.03 && vPw128.y > -0.05 && vPw128.y < 3.05 ) ? max( vBake, vec3( 0.0 ) ) : vBake ) * bakeGain * PI;
 iblIrradiance = vec3( 0.0 );` +
             (n
               ? `
