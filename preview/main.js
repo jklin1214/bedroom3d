@@ -8177,6 +8177,7 @@ async function $y() {
       )),
       (ee.receiveShadow = !(I.emit || I.glass)),
       (ee.matrixAutoUpdate = !1),
+      U.name === "curtain_sh" && ((re.colorWrite = !1), (re.depthWrite = !1), (re.shadowSide = 2)),
       re.userData.cap &&
         ((ee.userData.base = re),
         (ee.userData.cap = re.userData.cap),
