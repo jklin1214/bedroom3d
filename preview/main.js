@@ -6065,6 +6065,18 @@ function ys() {
     Nn.update(Ge, it));
   let t = rl.fromCubemap(Ih.texture).texture;
   for (let n of hl) n.envMap = t;
+  {
+    const hs = [];
+    Pt === "neo" && it.traverse((o) => { o.isMesh && (o.name === "slats" || o.name === "slats__p") && o.visible && (hs.push(o), (o.visible = !1)); });
+    if (hs.length && Pt === "neo") {
+      Nn.update(Ge, it);
+      const t2 = rl.fromCubemap(Ih.texture).texture;
+      for (const o of hs) o.visible = !0;
+      it.traverse((o) => { if (o.isMesh && (o.name === "ovenglass" || o.name === "steel" || o.name === "ovenglass__p" || o.name === "steel__p")) for (const m of [o.material, o.userData.base, o.userData.cap].flat()) m && m.isMaterial && hl.includes(m) && (m.envMap = t2); });
+      window.__oenv && window.__oenv.dispose();
+      window.__oenv = t2;
+    }
+  }
   (vs && (vs.envMap = t),
     xh && xh.dispose(),
     (xh = t),
