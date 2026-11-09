@@ -5346,7 +5346,7 @@ function el(i) {
       " MB"));
 }
 async function Hh(i, e) {
-  let t = await fetch(i + (i.includes("?") ? "&" : "?") + "v=" + (window.__CACHE_V || "cap158"));
+  let t = await fetch(i + (i.includes("?") ? "&" : "?") + "v=" + (window.__CACHE_V || "98bff39"));
   if (!t.ok) throw new Error(i + " " + t.status);
   let n = t.body.getReader(),
     s = [],
