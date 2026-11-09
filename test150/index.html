@@ -52,7 +52,7 @@ body{padding-top:52px}
 .card{top:calc(env(safe-area-inset-top,0px) + 56px) !important}
 #vp{top:calc(env(safe-area-inset-top,0px) + 56px) !important}
 </style>
-<div id="testBanner" role="banner">版本150・未驗證測試版・缺面修正152<small>Isolated staging only — not production / not preview · do not treat as approved · cam151 controls preserved · connecting-face patch 152 (UNVERIFIED experimental)</small></div>
+<div id="testBanner" role="banner">版本150・未驗證測試版・缺面修正152<small>Isolated staging only — not production / not preview · do not treat as approved · cam151 + DIAG153 mesh isolation UI · geo152 kept · root-cause NOT confirmed</small></div>
 <div id="stage" aria-label="第三戶 U3P69A（主臥 A）輕奢風與法式風的 3D 模型，可用手指拖曳轉動"></div>
 <div class="card">
   <h1>第三戶 主臥 A 3D（輕奢風・法式風）</h1>
@@ -71,7 +71,7 @@ body{padding-top:52px}
 </div>
 <div class="loader" id="loader"><div><b>載入 3D 模型</b><div class="bar"><i id="prog"></i></div><small id="progText">準備中</small></div></div>
 
-<script>window.__fileURL=u=>u;</script><script type="module" src="main.js?v=cam151_geo152"></script>
+<script>window.__fileURL=u=>u;</script><script type="module" src="main.js?v=cam151_diag153"></script>
 
 
 <!-- VERIFY PANEL v2 (test-only) -->
@@ -87,7 +87,7 @@ body{padding-top:52px}
 #vp label.chk{display:flex;gap:6px;align-items:center}
 </style>
 <div id="vp" aria-label="verify camera panel v2">
-  <h3>VERIFY v2 · snapCam cam151 · geo152</h3>
+  <h3>VERIFY v2 · cam151 · DIAG153</h3>
   <p class="st" id="vpStat">waiting for __gotoWalk…</p>
   <div class="row">
     <a href="./">self</a>
@@ -127,6 +127,38 @@ body{padding-top:52px}
     <label>tgZ <input id="tz" value="1.87"></label>
     <button type="button" id="vpGo">Go WALK</button>
   </div>
+  
+    <h3 style="margin:8px 0 4px;font:600 12px/1.2 inherit;color:#f6c">DIAG153 · mesh isolation</h3>
+    <p class="st" style="opacity:.85">Root cause NOT claimed. Hide/flat/overlay to find drawn surface. RESTORE resets.</p>
+    <div class="row">
+      <button type="button" data-diag="c01lock">Lock C01 closer</button>
+      <button type="button" data-diag="info">Show mesh info</button>
+      <button type="button" data-diag="restore">RESTORE all</button>
+    </div>
+    <div class="row">
+      <button type="button" data-diag="hide" data-m="wall">Hide wall</button>
+      <button type="button" data-diag="show" data-m="wall">Show wall</button>
+      <button type="button" data-diag="solo" data-m="wall">Solo wall</button>
+      <button type="button" data-diag="flat" data-m="wall" data-c="0xff00aa">Flat wall</button>
+    </div>
+    <div class="row">
+      <button type="button" data-diag="hide" data-m="wall__p">Hide wall__p</button>
+      <button type="button" data-diag="solo" data-m="door">Solo door</button>
+      <button type="button" data-diag="flat" data-m="door" data-c="0x00ffcc">Flat door</button>
+      <button type="button" data-diag="hide" data-m="dark">Hide dark</button>
+    </div>
+    <div class="row">
+      <button type="button" data-diag="hide" data-m="molding">Hide molding</button>
+      <button type="button" data-diag="hide" data-m="skirting">Hide skirting</button>
+      <button type="button" data-diag="hide" data-m="dleaf_c">Hide dleaf_c</button>
+      <button type="button" data-diag="hide" data-m="cabinet">Hide cabinet</button>
+    </div>
+    <div class="row">
+      <button type="button" data-diag="overlay30">Paint wall last30 MAGENTA</button>
+      <button type="button" data-diag="clearov">Clear overlay</button>
+    </div>
+    <p class="st" id="vpDiag">diag: —</p>
+
   <p class="st" id="vpLive">live: —</p>
 </div>
 <script>
@@ -187,8 +219,38 @@ body{padding-top:52px}
   const iv=setInterval(()=>{
     if(ready()){ vpStat.textContent='ready · __snapCam (target near eye; bypasses maxDistance=1 pull); HUD REQ vs ACTUAL'; clearInterval(iv); refresh(); }
   },400);
+  
+    function diagReady(){ return typeof window.__diagList==='function' && typeof window.__diagInfo==='function'; }
+    function setDiag(obj){
+      try{ vpDiag.textContent = typeof obj==='string' ? obj : JSON.stringify(obj, null, 0).slice(0,900); }
+      catch(e){ vpDiag.textContent=String(obj); }
+    }
+    document.querySelectorAll('#vp [data-diag]').forEach(b=>b.onclick=()=>{
+      if(!diagReady()){ setDiag('DIAG hooks not ready'); return; }
+      const act=b.dataset.diag, m=b.dataset.m, c=b.dataset.c;
+      if(act==='c01lock'){
+        const p=[-0.17,1.55,-1.50], t=[2.15,1.35,1.87];
+        lastReq={eye:p.slice(),look:t.slice()};
+        const st=window.__snapCam(p,t,{cut:false,lens:17,fov:55});
+        setFields(p,t);
+        setDiag({action:'Lock C01 closer', snap:st, info:window.__diagInfo()});
+        setTimeout(refresh,100); return;
+      }
+      if(act==='info'){ setDiag(window.__diagInfo()); return; }
+      if(act==='restore'){ setDiag({action:'RESTORE', info:window.__diagRestore()&&window.__diagInfo()}); return; }
+      if(act==='hide'){ window.__diagHide(m); setDiag({action:'Hide '+m, info:window.__diagInfo()}); return; }
+      if(act==='show'){ window.__diagShow(m); setDiag({action:'Show '+m, info:window.__diagInfo()}); return; }
+      if(act==='solo'){ window.__diagSolo(m); setDiag({action:'Solo '+m, info:window.__diagInfo()}); return; }
+      if(act==='flat'){ window.__diagFlat(m, c?parseInt(c):0xff00aa); setDiag({action:'Flat '+m, info:window.__diagInfo()}); return; }
+      if(act==='overlay30'){ setDiag({action:'Paint wall last30', result:window.__diagPaintAdded(), info:window.__diagInfo()}); return; }
+      if(act==='clearov'){ window.__diagClearOverlays(); setDiag({action:'Clear overlay', info:window.__diagInfo()}); return; }
+    });
+    const iv2=setInterval(()=>{
+      if(diagReady()){ setDiag('ready · DIAG153 — use Lock C01 closer then Hide/Flat/Paint last30'); clearInterval(iv2); }
+    },400);
+
   setInterval(()=>{ if(ready()) refresh(); }, 1000);
-})();
+  })();
 </script>
 
 </body></html>

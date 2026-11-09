@@ -10164,3 +10164,151 @@ setTimeout(()=>{try{
   console.log("lightmap/tex no-mip LinearFilter ClampToEdge");
 }catch(e){console.warn(e);}},90);
 
+
+
+/* === DIAG153 test-only mesh isolation (reversible; no geo change) === */
+window.__diag={saved:new Map(), mats:new Map(), overlays:[], log:[]};
+window.__diagCandidates=["wall","wall__p","door","door__p","dark","dark__p","molding","molding__p","skirting","skirting__p","dleaf_c","dleaf_c__p","dmold_c","dmold_c__p","bwall","kwall_v","kwall_p","kwall_g","kwall_b","cabinet","cabinet__p","floor_oak","floor_oak__p"];
+window.__diagFind=(name)=>{
+  const out=[];
+  try{ it.traverse(o=>{ if(o.isMesh && (o.name===name || (o.userData&&o.userData.name===name))) out.push(o); }); }catch(e){}
+  return out;
+};
+window.__diagList=()=>{
+  const rows=[];
+  const want=new Set(window.__diagCandidates);
+  try{
+    it.traverse(o=>{
+      if(!o.isMesh) return;
+      const nm=o.name||(o.userData&&o.userData.name)||"?";
+      if(!want.has(nm) && !/wall|door|dark|mold|skirt|kwall|bwall|dleaf|dmold|cabinet|floor_oak/.test(nm)) return;
+      const idx=o.geometry && o.geometry.index;
+      const ntri=idx ? (idx.count/3)|0 : (o.geometry&&o.geometry.attributes.position ? ((o.geometry.attributes.position.count/3)|0) : -1);
+      const nvert=o.geometry&&o.geometry.attributes.position ? o.geometry.attributes.position.count : -1;
+      rows.push({name:nm, visible:!!o.visible, ntri, nvert, drawRange: o.geometry&&o.geometry.drawRange ? {...o.geometry.drawRange} : null});
+    });
+  }catch(e){ return {error:String(e), rows}; }
+  rows.sort((a,b)=>a.name.localeCompare(b.name));
+  return {play:!!window.__PLAYON, cutn:!!window.__cutn, xs:(typeof xs!=="undefined"?xs:"?"), rows};
+};
+window.__diagHide=(name)=>{
+  for(const o of window.__diagFind(name)){
+    if(!window.__diag.saved.has(o)) window.__diag.saved.set(o,{visible:o.visible});
+    o.visible=false;
+  }
+  try{Nt();}catch(e){}
+  return window.__diagList();
+};
+window.__diagShow=(name)=>{
+  for(const o of window.__diagFind(name)){
+    if(!window.__diag.saved.has(o)) window.__diag.saved.set(o,{visible:o.visible});
+    o.visible=true;
+  }
+  try{Nt();}catch(e){}
+  return window.__diagList();
+};
+window.__diagSolo=(name)=>{
+  // hide all candidates except name (still reversible)
+  for(const n of window.__diagCandidates){
+    for(const o of window.__diagFind(n)){
+      if(!window.__diag.saved.has(o)) window.__diag.saved.set(o,{visible:o.visible});
+      o.visible=(n===name);
+    }
+  }
+  try{Nt();}catch(e){}
+  return window.__diagList();
+};
+window.__diagFlat=(name, color=0xff00aa)=>{
+  // MeshBasicMaterial flat unlit; remember original material
+  let Mat=null;
+  try{ Mat = Kt || THREE.MeshBasicMaterial; }catch(e){}
+  try{ if(!Mat && typeof THREE!=="undefined") Mat=THREE.MeshBasicMaterial; }catch(e){}
+  for(const o of window.__diagFind(name)){
+    if(!window.__diag.mats.has(o)) window.__diag.mats.set(o, o.material);
+    try{
+      o.material = new Kt({color: color, fog:false, toneMapped:false});
+    }catch(e1){
+      try{ o.material = new (THREE.MeshBasicMaterial)({color:color, fog:false, toneMapped:false}); }catch(e2){ return {error:String(e2)}; }
+    }
+  }
+  try{Nt();}catch(e){}
+  return window.__diagList();
+};
+window.__diagPaintAdded=()=>{
+  // Overlay ONLY the last 30 tris of wall index buffer in hot magenta — proves whether +30 are in the LIVE drawn buffer and in frustum.
+  window.__diagClearOverlays();
+  const meshes=window.__diagFind("wall");
+  if(!meshes.length) return {error:"wall mesh not found"};
+  const o=meshes[0];
+  const geo=o.geometry;
+  const idx=geo.index;
+  if(!idx || idx.count < 90) return {error:"index too small", count: idx&&idx.count};
+  const ntri=(idx.count/3)|0;
+  const startTri=Math.max(0, ntri-30);
+  const pos=geo.attributes.position;
+  // build standalone geometry from last 30 tris
+  const triCount=ntri-startTri;
+  const positions=new Float32Array(triCount*3*3);
+  const ia=idx.array;
+  let w=0;
+  for(let t=startTri;t<ntri;t++){
+    for(let k=0;k<3;k++){
+      const vi=ia[t*3+k];
+      positions[w++]=pos.getX(vi); positions[w++]=pos.getY(vi); positions[w++]=pos.getZ(vi);
+    }
+  }
+  let g, mat, mesh;
+  try{
+    g=new _t(); // BufferGeometry
+  }catch(e){ g=null; }
+  try{
+    if(!g){ try{g=new THREE.BufferGeometry();}catch(e3){return {error:"no BufferGeometry"};} }
+    g.setAttribute("position", new lt(positions, 3));
+    g.computeBoundingSphere();
+    try{ mat=new Kt({color:0xff00ff, side:2, depthTest:true, depthWrite:false, fog:false, toneMapped:false, transparent:true, opacity:0.85}); }
+    catch(e){ mat=new THREE.MeshBasicMaterial({color:0xff00ff, side:2, depthTest:true, depthWrite:false, fog:false, toneMapped:false, transparent:true, opacity:0.85}); }
+    mesh=new dt(g, mat);
+    mesh.name="__diag_overlay_wall_last30";
+    mesh.renderOrder=999;
+    mesh.frustumCulled=false;
+    it.add(mesh);
+    window.__diag.overlays.push(mesh);
+  }catch(e){ return {error:String(e), ntri, startTri}; }
+  try{Nt();}catch(e){}
+  // also report world bbox of overlay
+  g.computeBoundingBox();
+  const bb=g.boundingBox;
+  return {ok:true, wall_ntri:ntri, overlay_tris:triCount, bbox:{min:[bb.min.x,bb.min.y,bb.min.z], max:[bb.max.x,bb.max.y,bb.max.z]}};
+};
+window.__diagClearOverlays=()=>{
+  for(const m of window.__diag.overlays){
+    try{ it.remove(m); if(m.geometry) m.geometry.dispose(); if(m.material) m.material.dispose(); }catch(e){}
+  }
+  window.__diag.overlays=[];
+};
+window.__diagRestore=()=>{
+  window.__diagClearOverlays();
+  for(const [o,s] of window.__diag.saved){ try{ o.visible=s.visible; }catch(e){} }
+  window.__diag.saved.clear();
+  for(const [o,m] of window.__diag.mats){ try{ o.material=m; }catch(e){} }
+  window.__diag.mats.clear();
+  try{Nt();}catch(e){}
+  return window.__diagList();
+};
+window.__diagInfo=()=>{
+  const L=window.__diagList();
+  const wall=(L.rows||[]).find(r=>r.name==="wall");
+  const wallp=(L.rows||[]).find(r=>r.name==="wall__p");
+  return {
+    note:"DIAG153 reversible isolation — do not treat as root-cause claim",
+    cam: (typeof window.__camState==="function"?window.__camState():null),
+    play:L.play, cutn:L.cutn,
+    wall_ntri_runtime: wall&&wall.ntri,
+    wall__p_ntri_runtime: wallp&&wallp.ntri,
+    expect_wall_ntri_if_geo152_loaded: 107125,
+    expect_wall_ntri_if_geo150_loaded: 107095,
+    visible: (L.rows||[]).filter(r=>r.visible).map(r=>r.name+":"+r.ntri),
+    hidden_candidates: (L.rows||[]).filter(r=>!r.visible).map(r=>r.name+":"+r.ntri),
+  };
+};
+
