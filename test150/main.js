@@ -10281,7 +10281,7 @@ window.__diagInfo=()=>{
   const L=window.__diagList();
   const walls=(L.rows||[]).filter(r=>r.name==='wall'||r.nameProp==='wall'||r.userDataName==='wall');
   return {
-    note:'XH-OFF157 — +door-south -Z jamb cap (p1 parity); Xh off; ?xh=on restores',
+    note:'XH-OFF157b — jamb cap + variants.bytes=lightBytes+1; Xh off; ?xh=on',
     baseline:{expect_wall_ntri:107011, actual_wall_ntri_main:L.wall_ntri_main, label:'preview146/audit146'},
     predictions:window.__diagPredictions,
     cam:(typeof window.__camState==='function'?window.__camState():null),

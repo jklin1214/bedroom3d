@@ -1,0 +1,58 @@
+[
+  {
+    "label": "root",
+    "ok": true,
+    "n_err": 0,
+    "errors": [],
+    "n_meshes": 167,
+    "notes": [
+      "geo Vh ok bytes=37414764 ab=37414772",
+      "luxe_day Vh ok bytes=9271149 ab=9271157",
+      "luxe_night Vh ok bytes=9271149 ab=9271157",
+      "neo_day Vh ok bytes=9271149 ab=9271157",
+      "neo_night Vh ok bytes=9271149 ab=9271157"
+    ]
+  },
+  {
+    "label": "preview",
+    "ok": true,
+    "n_err": 0,
+    "errors": [],
+    "n_meshes": 167,
+    "notes": [
+      "geo Vh ok bytes=39635896 ab=39635904",
+      "luxe_day Vh ok bytes=9271149 ab=9271157",
+      "luxe_night Vh ok bytes=9271149 ab=9271157",
+      "neo_day Vh ok bytes=9271149 ab=9271157",
+      "neo_night Vh ok bytes=9271149 ab=9271157"
+    ]
+  },
+  {
+    "label": "xh156",
+    "ok": true,
+    "n_err": 0,
+    "errors": [],
+    "n_meshes": 167,
+    "notes": [
+      "geo Vh ok bytes=39635896 ab=39635904",
+      "luxe_day Vh ok bytes=9271149 ab=9271157",
+      "luxe_night Vh ok bytes=9271149 ab=9271157",
+      "neo_day Vh ok bytes=9271149 ab=9271157",
+      "neo_night Vh ok bytes=9271149 ab=9271157"
+    ]
+  },
+  {
+    "label": "test150_cap157b",
+    "ok": true,
+    "n_err": 0,
+    "errors": [],
+    "n_meshes": 167,
+    "notes": [
+      "geo Vh ok bytes=42336316 ab=42336324",
+      "luxe_day Vh ok bytes=9979337 ab=9979345",
+      "luxe_night Vh ok bytes=9979337 ab=9979345",
+      "neo_day Vh ok bytes=9979337 ab=9979345",
+      "neo_night Vh ok bytes=9979337 ab=9979345"
+    ]
+  }
+]
