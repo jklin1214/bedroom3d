@@ -10164,92 +10164,167 @@ setTimeout(()=>{try{
   console.log("lightmap/tex no-mip LinearFilter ClampToEdge");
 }catch(e){console.warn(e);}},90);
 
-
-
-/* === DIAG153 test-only mesh isolation (reversible; no geo change) === */
-window.__diag={saved:new Map(), mats:new Map(), overlays:[], log:[]};
-window.__diagCandidates=["wall","wall__p","door","door__p","dark","dark__p","molding","molding__p","skirting","skirting__p","dleaf_c","dleaf_c__p","dmold_c","dmold_c__p","bwall","kwall_v","kwall_p","kwall_g","kwall_b","cabinet","cabinet__p","floor_oak","floor_oak__p"];
-window.__diagFind=(name)=>{
-  const out=[];
-  try{ it.traverse(o=>{ if(o.isMesh && (o.name===name || (o.userData&&o.userData.name===name))) out.push(o); }); }catch(e){}
-  return out;
+/* === DIAG154 test-only: unique object ids + pick + sticky hide (no geo change) === */
+window.__diag={saved:new Map(), mats:new Map(), overlays:[], pickOn:false, pickHandler:null, picks:[], stickyIds:new Set(), _idSeq:0};
+window.__diagEnsureIds=()=>{
+  try{
+    it.traverse(o=>{
+      if(!o || !o.isMesh) return;
+      if(o.userData && o.userData.__diagId) return;
+      if(!o.userData) o.userData={};
+      o.userData.__diagId = 'D'+(++window.__diag._idSeq);
+      // tag if this mesh is in Xh bake-overlay list
+      try{ o.userData.__diagInXh = (typeof Xh!=='undefined' && Array.isArray(Xh) && Xh.indexOf(o)>=0); }catch(e){ o.userData.__diagInXh=false; }
+      try{ if(!o.name && o.userData && o.userData.name){ /* overlay bake copy */ o.userData.__diagKind='xh-overlay'; } else { o.userData.__diagKind=o.userData.__diagInXh?'xh-member':'main'; } }catch(e){}
+    });
+  }catch(e){}
+};
+window.__diagMatInfo=(o)=>{
+  const m=o.material;
+  if(!m) return null;
+  const one=(x)=>({
+    type: x.type|| (x.isShaderMaterial?'ShaderMaterial':x.isMeshBasicMaterial?'MeshBasicMaterial':'?'),
+    side: x.side,
+    depthTest: x.depthTest,
+    depthWrite: x.depthWrite,
+    transparent: !!x.transparent,
+    opacity: x.opacity,
+    clippingPlanes: !!(x.clippingPlanes && x.clippingPlanes.length),
+    colorWrite: x.colorWrite,
+  });
+  return Array.isArray(m) ? m.map(one) : one(m);
+};
+window.__diagRow=(o)=>{
+  const nm=o.name|| (o.userData&&o.userData.name) || '?';
+  const idx=o.geometry && o.geometry.index;
+  const ntri=idx ? (idx.count/3)|0 : -1;
+  const nvert=o.geometry&&o.geometry.attributes.position ? o.geometry.attributes.position.count : -1;
+  let e=[0,0,0], q=[0,0,0,1], s=[1,1,1];
+  try{
+    o.updateMatrixWorld(true);
+    const p=new A(); o.getWorldPosition(p);
+    e=[+p.x.toFixed(4),+p.y.toFixed(4),+p.z.toFixed(4)];
+    if(o.matrixWorld){
+      // scale from matrix columns
+      const me=o.matrixWorld.elements;
+      s=[
+        +Math.hypot(me[0],me[1],me[2]).toFixed(4),
+        +Math.hypot(me[4],me[5],me[6]).toFixed(4),
+        +Math.hypot(me[8],me[9],me[10]).toFixed(4)
+      ];
+    }
+  }catch(err){}
+  return {
+    id: o.userData.__diagId,
+    name: nm,
+    nameProp: o.name||'',
+    userDataName: (o.userData&&o.userData.name)||'',
+    visible: !!o.visible,
+    ntri, nvert,
+    renderOrder: o.renderOrder||0,
+    frustumCulled: !!o.frustumCulled,
+    inXh: !!o.userData.__diagInXh,
+    worldPos: e,
+    worldScale: s,
+    material: window.__diagMatInfo(o),
+    stickyHidden: window.__diag.stickyIds.has(o.userData.__diagId),
+  };
 };
 window.__diagList=()=>{
+  window.__diagEnsureIds();
   const rows=[];
-  const want=new Set(window.__diagCandidates);
   try{
     it.traverse(o=>{
       if(!o.isMesh) return;
-      const nm=o.name||(o.userData&&o.userData.name)||"?";
-      if(!want.has(nm) && !/wall|door|dark|mold|skirt|kwall|bwall|dleaf|dmold|cabinet|floor_oak/.test(nm)) return;
-      const idx=o.geometry && o.geometry.index;
-      const ntri=idx ? (idx.count/3)|0 : (o.geometry&&o.geometry.attributes.position ? ((o.geometry.attributes.position.count/3)|0) : -1);
-      const nvert=o.geometry&&o.geometry.attributes.position ? o.geometry.attributes.position.count : -1;
-      rows.push({name:nm, visible:!!o.visible, ntri, nvert, drawRange: o.geometry&&o.geometry.drawRange ? {...o.geometry.drawRange} : null});
+      const nm=o.name|| (o.userData&&o.userData.name) || '';
+      if(!nm) return;
+      // keep list manageable: candidates + anything currently sticky/picked
+      const interesting=/wall|door|dark|mold|skirt|kwall|bwall|dleaf|dmold|cabinet|floor_oak|c_door/.test(nm)
+        || window.__diag.stickyIds.has(o.userData.__diagId);
+      if(!interesting) return;
+      rows.push(window.__diagRow(o));
     });
   }catch(e){ return {error:String(e), rows}; }
-  rows.sort((a,b)=>a.name.localeCompare(b.name));
-  return {play:!!window.__PLAYON, cutn:!!window.__cutn, xs:(typeof xs!=="undefined"?xs:"?"), rows};
+  rows.sort((a,b)=> (a.name+a.id).localeCompare(b.name+b.id));
+  // group duplicates by name
+  const byName={};
+  for(const r of rows){ (byName[r.name]=byName[r.name]||[]).push(r.id); }
+  const dupes=Object.fromEntries(Object.entries(byName).filter(([k,v])=>v.length>1));
+  return {play:!!window.__PLAYON, cutn:!!window.__cutn, dupes, rows};
 };
-window.__diagHide=(name)=>{
-  for(const o of window.__diagFind(name)){
-    if(!window.__diag.saved.has(o)) window.__diag.saved.set(o,{visible:o.visible});
-    o.visible=false;
-  }
-  try{Nt();}catch(e){}
-  return window.__diagList();
+window.__diagFindId=(id)=>{
+  let hit=null;
+  try{ it.traverse(o=>{ if(o.isMesh && o.userData && o.userData.__diagId===id) hit=o; }); }catch(e){}
+  return hit;
 };
-window.__diagShow=(name)=>{
-  for(const o of window.__diagFind(name)){
-    if(!window.__diag.saved.has(o)) window.__diag.saved.set(o,{visible:o.visible});
-    o.visible=true;
-  }
-  try{Nt();}catch(e){}
-  return window.__diagList();
+window.__diagFindName=(name)=>{
+  const out=[];
+  try{ it.traverse(o=>{
+    if(!o.isMesh) return;
+    const nm=o.name|| (o.userData&&o.userData.name) || '';
+    if(nm===name) out.push(o);
+  }); }catch(e){}
+  return out;
 };
-window.__diagSolo=(name)=>{
-  // hide all candidates except name (still reversible)
-  for(const n of window.__diagCandidates){
-    for(const o of window.__diagFind(n)){
-      if(!window.__diag.saved.has(o)) window.__diag.saved.set(o,{visible:o.visible});
-      o.visible=(n===name);
+window.__diagHideId=(id)=>{
+  const o=window.__diagFindId(id);
+  if(!o) return {error:'id not found', id};
+  if(!window.__diag.saved.has(o)) window.__diag.saved.set(o,{visible:o.visible});
+  o.visible=false;
+  window.__diag.stickyIds.add(id);
+  // if in Xh, temporarily remove so Nt/__xhv cannot restore
+  try{
+    if(typeof Xh!=='undefined' && Array.isArray(Xh)){
+      const i=Xh.indexOf(o);
+      if(i>=0){ o.userData.__diagXhIdx=i; Xh.splice(i,1); o.userData.__diagInXh=false; }
     }
-  }
+  }catch(e){}
   try{Nt();}catch(e){}
   return window.__diagList();
 };
-window.__diagFlat=(name, color=0xff00aa)=>{
-  // MeshBasicMaterial flat unlit; remember original material
-  let Mat=null;
-  try{ Mat = Kt || THREE.MeshBasicMaterial; }catch(e){}
-  try{ if(!Mat && typeof THREE!=="undefined") Mat=THREE.MeshBasicMaterial; }catch(e){}
-  for(const o of window.__diagFind(name)){
-    if(!window.__diag.mats.has(o)) window.__diag.mats.set(o, o.material);
-    try{
-      o.material = new Kt({color: color, fog:false, toneMapped:false});
-    }catch(e1){
-      try{ o.material = new (THREE.MeshBasicMaterial)({color:color, fog:false, toneMapped:false}); }catch(e2){ return {error:String(e2)}; }
-    }
+window.__diagHideName=(name)=>{
+  const outs=[];
+  for(const o of window.__diagFindName(name)){
+    outs.push(window.__diagHideId(o.userData.__diagId));
   }
+  return {hidName:name, count:outs.length, list:window.__diagList()};
+};
+window.__diagSoloId=(id)=>{
+  window.__diagEnsureIds();
+  const keep=window.__diagFindId(id);
+  if(!keep) return {error:'id not found', id};
+  const rows=window.__diagList().rows||[];
+  for(const r of rows){
+    if(r.id===id) continue;
+    window.__diagHideId(r.id);
+  }
+  // ensure keep visible
+  if(!window.__diag.saved.has(keep)) window.__diag.saved.set(keep,{visible:keep.visible});
+  keep.visible=true;
+  window.__diag.stickyIds.delete(id);
   try{Nt();}catch(e){}
   return window.__diagList();
+};
+window.__diagFlatId=(id, color=0xff00aa)=>{
+  const o=window.__diagFindId(id);
+  if(!o) return {error:'id not found', id};
+  if(!window.__diag.mats.has(o)) window.__diag.mats.set(o, o.material);
+  try{ o.material = new Kt({color: color, fog:false, toneMapped:false, side: (o.material&&o.material.side!=null)?o.material.side:0, depthTest:true, depthWrite:true}); }
+  catch(e){ return {error:String(e)}; }
+  try{Nt();}catch(e){}
+  return window.__diagRow(o);
 };
 window.__diagPaintAdded=()=>{
-  // Overlay ONLY the last 30 tris of wall index buffer in hot magenta — proves whether +30 are in the LIVE drawn buffer and in frustum.
   window.__diagClearOverlays();
-  const meshes=window.__diagFind("wall");
-  if(!meshes.length) return {error:"wall mesh not found"};
-  const o=meshes[0];
-  const geo=o.geometry;
-  const idx=geo.index;
-  if(!idx || idx.count < 90) return {error:"index too small", count: idx&&idx.count};
-  const ntri=(idx.count/3)|0;
-  const startTri=Math.max(0, ntri-30);
-  const pos=geo.attributes.position;
-  // build standalone geometry from last 30 tris
-  const triCount=ntri-startTri;
-  const positions=new Float32Array(triCount*3*3);
-  const ia=idx.array;
+  const meshes=window.__diagFindName('wall');
+  // prefer main named .name==='wall' not only userData
+  let o=meshes.find(m=>m.name==='wall') || meshes[0];
+  if(!o) return {error:'wall mesh not found'};
+  const geo=o.geometry, idx=geo.index;
+  if(!idx || idx.count < 90) return {error:'index too small', count: idx&&idx.count};
+  const ntri=(idx.count/3)|0, startTri=Math.max(0,ntri-30), triCount=ntri-startTri;
+  const pos=geo.attributes.position, ia=idx.array;
+  const positions=new Float32Array(triCount*9);
   let w=0;
   for(let t=startTri;t<ntri;t++){
     for(let k=0;k<3;k++){
@@ -10259,26 +10334,19 @@ window.__diagPaintAdded=()=>{
   }
   let g, mat, mesh;
   try{
-    g=new _t(); // BufferGeometry
-  }catch(e){ g=null; }
-  try{
-    if(!g){ try{g=new THREE.BufferGeometry();}catch(e3){return {error:"no BufferGeometry"};} }
-    g.setAttribute("position", new lt(positions, 3));
-    g.computeBoundingSphere();
-    try{ mat=new Kt({color:0xff00ff, side:2, depthTest:true, depthWrite:false, fog:false, toneMapped:false, transparent:true, opacity:0.85}); }
-    catch(e){ mat=new THREE.MeshBasicMaterial({color:0xff00ff, side:2, depthTest:true, depthWrite:false, fog:false, toneMapped:false, transparent:true, opacity:0.85}); }
+    g=new _t();
+    g.setAttribute('position', new lt(positions, 3));
+    g.computeBoundingSphere(); g.computeBoundingBox();
+    mat=new Kt({color:0xff00ff, side:2, depthTest:true, depthWrite:false, fog:false, toneMapped:false, transparent:true, opacity:0.85});
     mesh=new dt(g, mat);
-    mesh.name="__diag_overlay_wall_last30";
-    mesh.renderOrder=999;
-    mesh.frustumCulled=false;
-    it.add(mesh);
-    window.__diag.overlays.push(mesh);
-  }catch(e){ return {error:String(e), ntri, startTri}; }
+    mesh.name='__diag_overlay_wall_last30';
+    mesh.renderOrder=999; mesh.frustumCulled=false;
+    it.add(mesh); window.__diag.overlays.push(mesh);
+  }catch(e){ return {error:String(e)}; }
   try{Nt();}catch(e){}
-  // also report world bbox of overlay
-  g.computeBoundingBox();
   const bb=g.boundingBox;
-  return {ok:true, wall_ntri:ntri, overlay_tris:triCount, bbox:{min:[bb.min.x,bb.min.y,bb.min.z], max:[bb.max.x,bb.max.y,bb.max.z]}};
+  return {ok:true, sourceId:o.userData.__diagId, wall_ntri:ntri, overlay_tris:triCount,
+    bbox:{min:[bb.min.x,bb.min.y,bb.min.z], max:[bb.max.x,bb.max.y,bb.max.z]}};
 };
 window.__diagClearOverlays=()=>{
   for(const m of window.__diag.overlays){
@@ -10288,8 +10356,22 @@ window.__diagClearOverlays=()=>{
 };
 window.__diagRestore=()=>{
   window.__diagClearOverlays();
+  window.__diagPick(false);
+  // restore Xh membership
+  try{
+    if(typeof Xh!=='undefined' && Array.isArray(Xh)){
+      it.traverse(o=>{
+        if(o.userData && o.userData.__diagXhIdx!=null){
+          if(Xh.indexOf(o)<0) Xh.push(o);
+          o.userData.__diagInXh=true;
+          delete o.userData.__diagXhIdx;
+        }
+      });
+    }
+  }catch(e){}
   for(const [o,s] of window.__diag.saved){ try{ o.visible=s.visible; }catch(e){} }
   window.__diag.saved.clear();
+  window.__diag.stickyIds.clear();
   for(const [o,m] of window.__diag.mats){ try{ o.material=m; }catch(e){} }
   window.__diag.mats.clear();
   try{Nt();}catch(e){}
@@ -10297,18 +10379,108 @@ window.__diagRestore=()=>{
 };
 window.__diagInfo=()=>{
   const L=window.__diagList();
-  const wall=(L.rows||[]).find(r=>r.name==="wall");
-  const wallp=(L.rows||[]).find(r=>r.name==="wall__p");
+  const walls=(L.rows||[]).filter(r=>r.name==='wall' || r.nameProp==='wall' || r.userDataName==='wall');
   return {
-    note:"DIAG153 reversible isolation — do not treat as root-cause claim",
-    cam: (typeof window.__camState==="function"?window.__camState():null),
-    play:L.play, cutn:L.cutn,
-    wall_ntri_runtime: wall&&wall.ntri,
-    wall__p_ntri_runtime: wallp&&wallp.ntri,
-    expect_wall_ntri_if_geo152_loaded: 107125,
-    expect_wall_ntri_if_geo150_loaded: 107095,
-    visible: (L.rows||[]).filter(r=>r.visible).map(r=>r.name+":"+r.ntri),
-    hidden_candidates: (L.rows||[]).filter(r=>!r.visible).map(r=>r.name+":"+r.ntri),
+    note:'DIAG154 — unique ids; duplicates expected for wall/door/cabinet (main + Xh bake overlay). No root-cause claim.',
+    cam: (typeof window.__camState==='function'?window.__camState():null),
+    play:L.play, cutn:L.cutn, dupes:L.dupes,
+    wall_instances: walls,
+    visible: (L.rows||[]).filter(r=>r.visible).map(r=>r.id+':'+r.name+':ntri'+r.ntri+':xh'+r.inXh+':ro'+r.renderOrder),
+    hidden: (L.rows||[]).filter(r=>!r.visible).map(r=>r.id+':'+r.name+':xh'+r.inXh),
+    picks: window.__diag.picks.slice(-8),
   };
 };
+window.__diagPick=(on)=>{
+  window.__diagEnsureIds();
+  const canvas = (typeof Ge!=='undefined' && Ge.domElement) ? Ge.domElement : document.querySelector('canvas');
+  if(!canvas) return {error:'no canvas'};
+  if(window.__diag.pickHandler){
+    canvas.removeEventListener('pointerdown', window.__diag.pickHandler, true);
+    window.__diag.pickHandler=null;
+  }
+  window.__diag.pickOn=!!on;
+  if(!on) return {pickOn:false};
+  if(typeof Ff==='undefined' || !Ff || !Ff.setFromCamera){
+    return {error:'Ff Raycaster not available'};
+  }
+  const handler=(ev)=>{
+    if(!window.__diag.pickOn) return;
+    if(ev.button!=null && ev.button!==0) return;
+    // do not steal UI clicks
+    if(ev.target && ev.target.closest && ev.target.closest('#vp')) return;
+    try{
+      const rect=canvas.getBoundingClientRect();
+      const ndc={ x: ((ev.clientX-rect.left)/rect.width)*2-1, y: -((ev.clientY-rect.top)/rect.height)*2+1 };
+      Ff.setFromCamera(ndc, Be);
+      // prefer all scene children recursive so overlays/dupes included
+      const hits=Ff.intersectObjects(it.children, true).filter(h=>h.object && h.object.isMesh && h.object.visible);
+      if(!hits.length){
+        const miss={miss:true, ndc, css:[+(ev.clientX-rect.left).toFixed(1), +(ev.clientY-rect.top).toFixed(1)], canvas:[+rect.width.toFixed(1),+rect.height.toFixed(1)]};
+        window.__diag.picks.push(miss);
+        if(window.__diag.onPick) window.__diag.onPick(miss);
+        return;
+      }
+      // annotate ids on hit objects
+      for(const h of hits.slice(0,6)){
+        if(!h.object.userData) h.object.userData={};
+        if(!h.object.userData.__diagId) window.__diagEnsureIds();
+        try{ h.object.userData.__diagInXh = (typeof Xh!=='undefined' && Array.isArray(Xh) && Xh.indexOf(h.object)>=0); }catch(e){}
+      }
+      const h=hits[0];
+      const o=h.object;
+      let wn=[0,0,0];
+      try{
+        if(h.face && h.face.normal){
+          const n=h.face.normal.clone();
+          n.transformDirection(o.matrixWorld);
+          wn=[+n.x.toFixed(4),+n.y.toFixed(4),+n.z.toFixed(4)];
+        }
+      }catch(e){}
+      const rec={
+        id: o.userData.__diagId,
+        name: o.name|| (o.userData&&o.userData.name) || '?',
+        nameProp: o.name||'',
+        userDataName: (o.userData&&o.userData.name)||'',
+        inXh: !!o.userData.__diagInXh,
+        renderOrder: o.renderOrder||0,
+        distance: +h.distance.toFixed(4),
+        faceIndex: h.faceIndex,
+        worldPoint: h.point ? [+h.point.x.toFixed(4),+h.point.y.toFixed(4),+h.point.z.toFixed(4)] : null,
+        worldNormal: wn,
+        material: window.__diagMatInfo(o),
+        ndc,
+        css:[+(ev.clientX-rect.left).toFixed(1), +(ev.clientY-rect.top).toFixed(1)],
+        canvas:[+rect.width.toFixed(1),+rect.height.toFixed(1)],
+        hits: hits.slice(0,5).map(x=>({
+          id:x.object.userData&&x.object.userData.__diagId,
+          name:x.object.name|| (x.object.userData&&x.object.userData.name),
+          nameProp:x.object.name||'',
+          userDataName:(x.object.userData&&x.object.userData.name)||'',
+          inXh:!!(x.object.userData&&x.object.userData.__diagInXh),
+          dist:+x.distance.toFixed(4),
+          face:x.faceIndex,
+          ro:x.object.renderOrder||0
+        })),
+      };
+      window.__diag.picks.push(rec);
+      if(window.__diag.onPick) window.__diag.onPick(rec);
+    }catch(err){
+      const rec={error:String(err)};
+      window.__diag.picks.push(rec);
+      if(window.__diag.onPick) window.__diag.onPick(rec);
+    }
+  };
+  window.__diag.pickHandler=handler;
+  canvas.addEventListener('pointerdown', handler, true);
+  return {pickOn:true, via:'Ff Raycaster (app)'};
+};
+
+if(!window.__diag._patched){
+  window.__diag._patched=true;
+  try{
+    const _Nt=Nt;
+    window.__diag._Nt=_Nt;
+    // wrap Nt if possible — Nt may be const; instead re-hide after delay on our ops only
+  }catch(e){}
+}
 

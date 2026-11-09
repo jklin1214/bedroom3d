@@ -52,7 +52,7 @@ body{padding-top:52px}
 .card{top:calc(env(safe-area-inset-top,0px) + 56px) !important}
 #vp{top:calc(env(safe-area-inset-top,0px) + 56px) !important}
 </style>
-<div id="testBanner" role="banner">版本150・未驗證測試版・缺面修正152<small>Isolated staging only — not production / not preview · do not treat as approved · cam151 + DIAG153 mesh isolation UI · geo152 kept · root-cause NOT confirmed</small></div>
+<div id="testBanner" role="banner">版本150・未驗證測試版・缺面修正152<small>Isolated staging only — not production / not preview · do not treat as approved · cam151 + DIAG154 id/pick UI · geo152 kept · root-cause NOT confirmed</small></div>
 <div id="stage" aria-label="第三戶 U3P69A（主臥 A）輕奢風與法式風的 3D 模型，可用手指拖曳轉動"></div>
 <div class="card">
   <h1>第三戶 主臥 A 3D（輕奢風・法式風）</h1>
@@ -71,7 +71,7 @@ body{padding-top:52px}
 </div>
 <div class="loader" id="loader"><div><b>載入 3D 模型</b><div class="bar"><i id="prog"></i></div><small id="progText">準備中</small></div></div>
 
-<script>window.__fileURL=u=>u;</script><script type="module" src="main.js?v=cam151_diag153"></script>
+<script>window.__fileURL=u=>u;</script><script type="module" src="main.js?v=cam151_diag154"></script>
 
 
 <!-- VERIFY PANEL v2 (test-only) -->
@@ -87,7 +87,7 @@ body{padding-top:52px}
 #vp label.chk{display:flex;gap:6px;align-items:center}
 </style>
 <div id="vp" aria-label="verify camera panel v2">
-  <h3>VERIFY v2 · cam151 · DIAG153</h3>
+  <h3>VERIFY v2 · cam151 · DIAG154</h3>
   <p class="st" id="vpStat">waiting for __gotoWalk…</p>
   <div class="row">
     <a href="./">self</a>
@@ -128,36 +128,34 @@ body{padding-top:52px}
     <button type="button" id="vpGo">Go WALK</button>
   </div>
   
-    <h3 style="margin:8px 0 4px;font:600 12px/1.2 inherit;color:#f6c">DIAG153 · mesh isolation</h3>
-    <p class="st" style="opacity:.85">Root cause NOT claimed. Hide/flat/overlay to find drawn surface. RESTORE resets.</p>
+    
+    <h3 style="margin:8px 0 4px;font:600 12px/1.2 inherit;color:#f6c">DIAG154 · id + pick</h3>
+    <p class="st" style="opacity:.85">Duplicates are separate objects (main vs Xh bake overlay). Pick tooth vs adjacent panel. No root-cause claim.</p>
     <div class="row">
-      <button type="button" data-diag="c01lock">Lock C01 closer</button>
-      <button type="button" data-diag="info">Show mesh info</button>
-      <button type="button" data-diag="restore">RESTORE all</button>
+      <button type="button" data-d154="c01">Lock C01 closer</button>
+      <button type="button" data-d154="info">List ids / dupes</button>
+      <button type="button" data-d154="restore">RESTORE all</button>
     </div>
     <div class="row">
-      <button type="button" data-diag="hide" data-m="wall">Hide wall</button>
-      <button type="button" data-diag="show" data-m="wall">Show wall</button>
-      <button type="button" data-diag="solo" data-m="wall">Solo wall</button>
-      <button type="button" data-diag="flat" data-m="wall" data-c="0xff00aa">Flat wall</button>
+      <button type="button" data-d154="pickon">PICK ON (click scene)</button>
+      <button type="button" data-d154="pickoff">PICK OFF</button>
+      <button type="button" data-d154="clearpicks">Clear picks</button>
     </div>
     <div class="row">
-      <button type="button" data-diag="hide" data-m="wall__p">Hide wall__p</button>
-      <button type="button" data-diag="solo" data-m="door">Solo door</button>
-      <button type="button" data-diag="flat" data-m="door" data-c="0x00ffcc">Flat door</button>
-      <button type="button" data-diag="hide" data-m="dark">Hide dark</button>
+      <button type="button" data-d154="hideName" data-m="wall">Hide ALL name=wall</button>
+      <button type="button" data-d154="overlay30">Paint last30 MAGENTA</button>
+      <button type="button" data-d154="clearov">Clear overlay</button>
     </div>
     <div class="row">
-      <button type="button" data-diag="hide" data-m="molding">Hide molding</button>
-      <button type="button" data-diag="hide" data-m="skirting">Hide skirting</button>
-      <button type="button" data-diag="hide" data-m="dleaf_c">Hide dleaf_c</button>
-      <button type="button" data-diag="hide" data-m="cabinet">Hide cabinet</button>
+      <button type="button" data-d154="hideName" data-m="door">Hide ALL name=door</button>
+      <button type="button" data-d154="hideName" data-m="dark">Hide ALL name=dark</button>
+      <button type="button" data-d154="hideName" data-m="bwall">Hide ALL name=bwall</button>
+      <button type="button" data-d154="hideName" data-m="cabinet">Hide ALL name=cabinet</button>
     </div>
-    <div class="row">
-      <button type="button" data-diag="overlay30">Paint wall last30 MAGENTA</button>
-      <button type="button" data-diag="clearov">Clear overlay</button>
-    </div>
+    <p class="st" style="opacity:.9">After pick: use id buttons below (filled from last pick / list).</p>
+    <div class="row" id="vpIdBtns"></div>
     <p class="st" id="vpDiag">diag: —</p>
+    <p class="st" id="vpPick">picks: —</p>
 
   <p class="st" id="vpLive">live: —</p>
 </div>
@@ -219,34 +217,72 @@ body{padding-top:52px}
   const iv=setInterval(()=>{
     if(ready()){ vpStat.textContent='ready · __snapCam (target near eye; bypasses maxDistance=1 pull); HUD REQ vs ACTUAL'; clearInterval(iv); refresh(); }
   },400);
+
   
-    function diagReady(){ return typeof window.__diagList==='function' && typeof window.__diagInfo==='function'; }
+    function d154ready(){ return typeof window.__diagInfo==='function' && typeof window.__diagPick==='function'; }
     function setDiag(obj){
-      try{ vpDiag.textContent = typeof obj==='string' ? obj : JSON.stringify(obj, null, 0).slice(0,900); }
+      try{ vpDiag.textContent = typeof obj==='string' ? obj : JSON.stringify(obj,null,0).slice(0,1200); }
       catch(e){ vpDiag.textContent=String(obj); }
     }
-    document.querySelectorAll('#vp [data-diag]').forEach(b=>b.onclick=()=>{
-      if(!diagReady()){ setDiag('DIAG hooks not ready'); return; }
-      const act=b.dataset.diag, m=b.dataset.m, c=b.dataset.c;
-      if(act==='c01lock'){
+    function setPick(obj){
+      try{ vpPick.textContent = typeof obj==='string' ? obj : JSON.stringify(obj,null,0).slice(0,900); }
+      catch(e){ vpPick.textContent=String(obj); }
+    }
+    function fillIdBtns(rows){
+      const box=document.getElementById('vpIdBtns'); if(!box) return;
+      box.innerHTML='';
+      (rows||[]).slice(0,12).forEach(r=>{
+        const b1=document.createElement('button'); b1.type='button';
+        b1.textContent='Hide '+r.id+' '+r.name+(r.inXh?' XH':'');
+        b1.onclick=()=>{ setDiag({action:'HideId', id:r.id, list:window.__diagHideId(r.id)}); refreshIdBtns(); };
+        const b2=document.createElement('button'); b2.type='button';
+        b2.textContent='Solo '+r.id;
+        b2.onclick=()=>{ setDiag({action:'SoloId', id:r.id, list:window.__diagSoloId(r.id)}); refreshIdBtns(); };
+        const b3=document.createElement('button'); b3.type='button';
+        b3.textContent='Flat '+r.id;
+        b3.onclick=()=>{ setDiag({action:'FlatId', id:r.id, row:window.__diagFlatId(r.id,0xff00aa)}); };
+        box.appendChild(b1); box.appendChild(b2); box.appendChild(b3);
+      });
+    }
+    function refreshIdBtns(){
+      if(!d154ready()) return;
+      const L=window.__diagList();
+      // prefer wall/door/dark duplicates first
+      const pref=['wall','door','dark','bwall','cabinet','dleaf_c','molding','skirting'];
+      const rows=(L.rows||[]).slice().sort((a,b)=>{
+        const pa=pref.indexOf(a.name), pb=pref.indexOf(b.name);
+        const ra=pa<0?99:pa, rb=pb<0?99:pb;
+        if(ra!==rb) return ra-rb;
+        return (a.name+a.id).localeCompare(b.name+b.id);
+      });
+      fillIdBtns(rows.filter(r=>pref.includes(r.name) || r.visible).slice(0,10));
+      return L;
+    }
+    document.querySelectorAll('#vp [data-d154]').forEach(b=>b.onclick=()=>{
+      if(!d154ready()){ setDiag('DIAG154 hooks not ready'); return; }
+      const act=b.dataset.d154, m=b.dataset.m;
+      if(act==='c01'){
         const p=[-0.17,1.55,-1.50], t=[2.15,1.35,1.87];
         lastReq={eye:p.slice(),look:t.slice()};
         const st=window.__snapCam(p,t,{cut:false,lens:17,fov:55});
         setFields(p,t);
         setDiag({action:'Lock C01 closer', snap:st, info:window.__diagInfo()});
-        setTimeout(refresh,100); return;
+        refreshIdBtns(); setTimeout(refresh,100); return;
       }
-      if(act==='info'){ setDiag(window.__diagInfo()); return; }
-      if(act==='restore'){ setDiag({action:'RESTORE', info:window.__diagRestore()&&window.__diagInfo()}); return; }
-      if(act==='hide'){ window.__diagHide(m); setDiag({action:'Hide '+m, info:window.__diagInfo()}); return; }
-      if(act==='show'){ window.__diagShow(m); setDiag({action:'Show '+m, info:window.__diagInfo()}); return; }
-      if(act==='solo'){ window.__diagSolo(m); setDiag({action:'Solo '+m, info:window.__diagInfo()}); return; }
-      if(act==='flat'){ window.__diagFlat(m, c?parseInt(c):0xff00aa); setDiag({action:'Flat '+m, info:window.__diagInfo()}); return; }
-      if(act==='overlay30'){ setDiag({action:'Paint wall last30', result:window.__diagPaintAdded(), info:window.__diagInfo()}); return; }
+      if(act==='info'){ setDiag(window.__diagInfo()); refreshIdBtns(); return; }
+      if(act==='restore'){ setDiag({action:'RESTORE', info:window.__diagRestore()&&window.__diagInfo()}); refreshIdBtns(); return; }
+      if(act==='pickon'){
+        window.__diag.onPick=(rec)=>{ setPick(rec); if(rec && rec.id){ fillIdBtns([{id:rec.id,name:rec.name,inXh:rec.inXh}].concat((rec.hits||[]).filter(h=>h.id&&h.id!==rec.id).map(h=>({id:h.id,name:h.name,inXh:h.inXh})))); } };
+        setDiag(window.__diagPick(true)); setPick('PICK ON — click tooth strip, then adjacent panel'); return;
+      }
+      if(act==='pickoff'){ setDiag(window.__diagPick(false)); setPick('PICK OFF'); return; }
+      if(act==='clearpicks'){ window.__diag.picks=[]; setPick('picks cleared'); return; }
+      if(act==='hideName'){ setDiag(window.__diagHideName(m)); refreshIdBtns(); return; }
+      if(act==='overlay30'){ setDiag({action:'Paint last30', result:window.__diagPaintAdded(), info:window.__diagInfo()}); return; }
       if(act==='clearov'){ window.__diagClearOverlays(); setDiag({action:'Clear overlay', info:window.__diagInfo()}); return; }
     });
-    const iv2=setInterval(()=>{
-      if(diagReady()){ setDiag('ready · DIAG153 — use Lock C01 closer then Hide/Flat/Paint last30'); clearInterval(iv2); }
+    const iv154=setInterval(()=>{
+      if(d154ready()){ setDiag('ready · DIAG154 — Lock C01, List ids, PICK ON, click tooth vs panel'); refreshIdBtns(); clearInterval(iv154); }
     },400);
 
   setInterval(()=>{ if(ready()) refresh(); }, 1000);
