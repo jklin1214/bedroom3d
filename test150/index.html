@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>版本150・未驗證測試版・缺面修正152｜第三戶 主臥 A 3D</title>
+<title>版本150・未驗證測試版・baseline146・DIAG155｜第三戶 主臥 A 3D</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700&display=swap">
 <style>
 /* Layout: full-bleed WebGL stage; a title card top-left carries the look switches (style + day/night), a scrollable view dock sits at the bottom. */
@@ -52,7 +52,7 @@ body{padding-top:52px}
 .card{top:calc(env(safe-area-inset-top,0px) + 56px) !important}
 #vp{top:calc(env(safe-area-inset-top,0px) + 56px) !important}
 </style>
-<div id="testBanner" role="banner">版本150・未驗證測試版・缺面修正152<small>Isolated staging only — not production / not preview · do not treat as approved · cam151 + DIAG154 id/pick UI · geo152 kept · root-cause NOT confirmed</small></div>
+<div id="testBanner" role="banner">版本150・未驗證測試版・baseline146・DIAG155<small>Isolated staging — not production/preview · geo=preview146 (ntri 107011) · cam151 kept · Claude matrix as UI only · NOT diagnosed</small></div>
 <div id="stage" aria-label="第三戶 U3P69A（主臥 A）輕奢風與法式風的 3D 模型，可用手指拖曳轉動"></div>
 <div class="card">
   <h1>第三戶 主臥 A 3D（輕奢風・法式風）</h1>
@@ -71,7 +71,7 @@ body{padding-top:52px}
 </div>
 <div class="loader" id="loader"><div><b>載入 3D 模型</b><div class="bar"><i id="prog"></i></div><small id="progText">準備中</small></div></div>
 
-<script>window.__fileURL=u=>u;</script><script type="module" src="main.js?v=cam151_diag154"></script>
+<script>window.__fileURL=u=>u;</script><script type="module" src="main.js?v=cam151_diag155"></script>
 
 
 <!-- VERIFY PANEL v2 (test-only) -->
@@ -87,7 +87,7 @@ body{padding-top:52px}
 #vp label.chk{display:flex;gap:6px;align-items:center}
 </style>
 <div id="vp" aria-label="verify camera panel v2">
-  <h3>VERIFY v2 · cam151 · DIAG154</h3>
+  <h3>VERIFY v2 · cam151 · DIAG155</h3>
   <p class="st" id="vpStat">waiting for __gotoWalk…</p>
   <div class="row">
     <a href="./">self</a>
@@ -129,31 +129,32 @@ body{padding-top:52px}
   </div>
   
     
-    <h3 style="margin:8px 0 4px;font:600 12px/1.2 inherit;color:#f6c">DIAG154 · id + pick</h3>
-    <p class="st" style="opacity:.85">Duplicates are separate objects (main vs Xh bake overlay). Pick tooth vs adjacent panel. No root-cause claim.</p>
+    
+    <h3 style="margin:8px 0 4px;font:600 12px/1.2 inherit;color:#f6c">DIAG155 · baseline146 matrix</h3>
+    <p class="st" style="opacity:.85">Geo = preview146 (no +84/+30). Modes inspired by consult — NOT treated as fact. Predictions shown before you test.</p>
     <div class="row">
-      <button type="button" data-d154="c01">Lock C01 closer</button>
-      <button type="button" data-d154="info">List ids / dupes</button>
-      <button type="button" data-d154="restore">RESTORE all</button>
+      <button type="button" data-d155="c01">Lock C01 closer</button>
+      <button type="button" data-d155="info">Show info / ntri</button>
+      <button type="button" data-d155="preds">Show PREDICTIONS</button>
+      <button type="button" data-d155="reset">RESET modes</button>
     </div>
     <div class="row">
-      <button type="button" data-d154="pickon">PICK ON (click scene)</button>
-      <button type="button" data-d154="pickoff">PICK OFF</button>
-      <button type="button" data-d154="clearpicks">Clear picks</button>
+      <button type="button" data-d155="baseline">BASELINE</button>
+      <button type="button" data-d155="xhMatOff">XH MAT OFF</button>
+      <button type="button" data-d155="xhOffset">XH OFFSET +1</button>
+      <button type="button" data-d155="mainUnlit">MAIN UNLIT</button>
     </div>
     <div class="row">
-      <button type="button" data-d154="hideName" data-m="wall">Hide ALL name=wall</button>
-      <button type="button" data-d154="overlay30">Paint last30 MAGENTA</button>
-      <button type="button" data-d154="clearov">Clear overlay</button>
+      <button type="button" data-d155="faceKind">FACE KIND color</button>
+      <button type="button" data-d155="nudgeP">Cam +1cm X</button>
+      <button type="button" data-d155="nudgeM">Cam −1cm X</button>
     </div>
     <div class="row">
-      <button type="button" data-d154="hideName" data-m="door">Hide ALL name=door</button>
-      <button type="button" data-d154="hideName" data-m="dark">Hide ALL name=dark</button>
-      <button type="button" data-d154="hideName" data-m="bwall">Hide ALL name=bwall</button>
-      <button type="button" data-d154="hideName" data-m="cabinet">Hide ALL name=cabinet</button>
+      <button type="button" data-d155="pickon">PICK ON</button>
+      <button type="button" data-d155="pickoff">PICK OFF</button>
+      <button type="button" data-d155="clearpicks">Clear picks</button>
     </div>
-    <p class="st" style="opacity:.9">After pick: use id buttons below (filled from last pick / list).</p>
-    <div class="row" id="vpIdBtns"></div>
+    <p class="st" id="vpPred" style="color:#f6c9a0">predictions: tap Show PREDICTIONS before modes</p>
     <p class="st" id="vpDiag">diag: —</p>
     <p class="st" id="vpPick">picks: —</p>
 
@@ -219,70 +220,53 @@ body{padding-top:52px}
   },400);
 
   
-    function d154ready(){ return typeof window.__diagInfo==='function' && typeof window.__diagPick==='function'; }
+    function d155ready(){ return typeof window.__diagInfo==='function' && typeof window.__diagXhMatOff==='function'; }
     function setDiag(obj){
-      try{ vpDiag.textContent = typeof obj==='string' ? obj : JSON.stringify(obj,null,0).slice(0,1200); }
+      try{ vpDiag.textContent = typeof obj==='string'?obj:JSON.stringify(obj,null,0).slice(0,1400); }
       catch(e){ vpDiag.textContent=String(obj); }
     }
     function setPick(obj){
-      try{ vpPick.textContent = typeof obj==='string' ? obj : JSON.stringify(obj,null,0).slice(0,900); }
+      try{ vpPick.textContent = typeof obj==='string'?obj:JSON.stringify(obj,null,0).slice(0,1100); }
       catch(e){ vpPick.textContent=String(obj); }
     }
-    function fillIdBtns(rows){
-      const box=document.getElementById('vpIdBtns'); if(!box) return;
-      box.innerHTML='';
-      (rows||[]).slice(0,12).forEach(r=>{
-        const b1=document.createElement('button'); b1.type='button';
-        b1.textContent='Hide '+r.id+' '+r.name+(r.inXh?' XH':'');
-        b1.onclick=()=>{ setDiag({action:'HideId', id:r.id, list:window.__diagHideId(r.id)}); refreshIdBtns(); };
-        const b2=document.createElement('button'); b2.type='button';
-        b2.textContent='Solo '+r.id;
-        b2.onclick=()=>{ setDiag({action:'SoloId', id:r.id, list:window.__diagSoloId(r.id)}); refreshIdBtns(); };
-        const b3=document.createElement('button'); b3.type='button';
-        b3.textContent='Flat '+r.id;
-        b3.onclick=()=>{ setDiag({action:'FlatId', id:r.id, row:window.__diagFlatId(r.id,0xff00aa)}); };
-        box.appendChild(b1); box.appendChild(b2); box.appendChild(b3);
-      });
+    function setPred(obj){
+      try{ vpPred.textContent = typeof obj==='string'?obj:JSON.stringify(obj,null,2).slice(0,900); }
+      catch(e){ vpPred.textContent=String(obj); }
     }
-    function refreshIdBtns(){
-      if(!d154ready()) return;
-      const L=window.__diagList();
-      // prefer wall/door/dark duplicates first
-      const pref=['wall','door','dark','bwall','cabinet','dleaf_c','molding','skirting'];
-      const rows=(L.rows||[]).slice().sort((a,b)=>{
-        const pa=pref.indexOf(a.name), pb=pref.indexOf(b.name);
-        const ra=pa<0?99:pa, rb=pb<0?99:pb;
-        if(ra!==rb) return ra-rb;
-        return (a.name+a.id).localeCompare(b.name+b.id);
-      });
-      fillIdBtns(rows.filter(r=>pref.includes(r.name) || r.visible).slice(0,10));
-      return L;
-    }
-    document.querySelectorAll('#vp [data-d154]').forEach(b=>b.onclick=()=>{
-      if(!d154ready()){ setDiag('DIAG154 hooks not ready'); return; }
-      const act=b.dataset.d154, m=b.dataset.m;
+    document.querySelectorAll('#vp [data-d155]').forEach(b=>b.onclick=()=>{
+      if(!d155ready()){ setDiag('DIAG155 hooks not ready'); return; }
+      const act=b.dataset.d155;
       if(act==='c01'){
         const p=[-0.17,1.55,-1.50], t=[2.15,1.35,1.87];
         lastReq={eye:p.slice(),look:t.slice()};
         const st=window.__snapCam(p,t,{cut:false,lens:17,fov:55});
         setFields(p,t);
         setDiag({action:'Lock C01 closer', snap:st, info:window.__diagInfo()});
-        refreshIdBtns(); setTimeout(refresh,100); return;
+        setTimeout(refresh,100); return;
       }
-      if(act==='info'){ setDiag(window.__diagInfo()); refreshIdBtns(); return; }
-      if(act==='restore'){ setDiag({action:'RESTORE', info:window.__diagRestore()&&window.__diagInfo()}); refreshIdBtns(); return; }
+      if(act==='info'){ setDiag(window.__diagInfo()); return; }
+      if(act==='preds'){ setPred(window.__diagPredictions); setDiag({note:'predictions loaded — compare after each mode'}); return; }
+      if(act==='reset'){ setDiag({action:'RESET', info:window.__diagReset()}); return; }
+      if(act==='baseline'){ setDiag({action:'BASELINE', info:window.__diagModeBaseline()}); return; }
+      if(act==='xhMatOff'){ setDiag({action:'XH_MAT_OFF', predict:window.__diagPredictions.D3_xh_mat_off, info:window.__diagXhMatOff(true)}); return; }
+      if(act==='xhOffset'){ setDiag({action:'XH_OFFSET', predict:window.__diagPredictions.D3_xh_offset, info:window.__diagXhOffset(true)}); return; }
+      if(act==='mainUnlit'){ setDiag({action:'MAIN_UNLIT', predict:window.__diagPredictions.D3_main_unlit, info:window.__diagMainUnlit(true)}); return; }
+      if(act==='faceKind'){ setDiag({action:'FACE_KIND', predict:window.__diagPredictions.D3_face_id, info:window.__diagFaceId(true)}); return; }
+      if(act==='nudgeP'){ setDiag({action:'nudge +1cm', predict:window.__diagPredictions.D1_nudge_1cm, result:window.__diagNudgeCam(+0.01)}); setTimeout(refresh,100); return; }
+      if(act==='nudgeM'){ setDiag({action:'nudge -1cm', predict:window.__diagPredictions.D1_nudge_1cm, result:window.__diagNudgeCam(-0.01)}); setTimeout(refresh,100); return; }
       if(act==='pickon'){
-        window.__diag.onPick=(rec)=>{ setPick(rec); if(rec && rec.id){ fillIdBtns([{id:rec.id,name:rec.name,inXh:rec.inXh}].concat((rec.hits||[]).filter(h=>h.id&&h.id!==rec.id).map(h=>({id:h.id,name:h.name,inXh:h.inXh})))); } };
-        setDiag(window.__diagPick(true)); setPick('PICK ON — click tooth strip, then adjacent panel'); return;
+        window.__diag.onPick=(rec)=>setPick(rec);
+        setDiag(window.__diagPick(true)); setPick('PICK ON — click tooth then adjacent panel; read distance/uuid/side/normalDotRay'); return;
       }
       if(act==='pickoff'){ setDiag(window.__diagPick(false)); setPick('PICK OFF'); return; }
-      if(act==='clearpicks'){ window.__diag.picks=[]; setPick('picks cleared'); return; }
-      if(act==='hideName'){ setDiag(window.__diagHideName(m)); refreshIdBtns(); return; }
-      if(act==='overlay30'){ setDiag({action:'Paint last30', result:window.__diagPaintAdded(), info:window.__diagInfo()}); return; }
-      if(act==='clearov'){ window.__diagClearOverlays(); setDiag({action:'Clear overlay', info:window.__diagInfo()}); return; }
+      if(act==='clearpicks'){ window.__diag.picks=[]; setPick('cleared'); return; }
     });
-    const iv154=setInterval(()=>{
-      if(d154ready()){ setDiag('ready · DIAG154 — Lock C01, List ids, PICK ON, click tooth vs panel'); refreshIdBtns(); clearInterval(iv154); }
+    const iv155=setInterval(()=>{
+      if(d155ready()){
+        setDiag('ready · DIAG155 baseline146 — Show PREDICTIONS, Lock C01, then XH MAT OFF / OFFSET / MAIN UNLIT');
+        setPred(window.__diagPredictions);
+        clearInterval(iv155);
+      }
     },400);
 
   setInterval(()=>{ if(ready()) refresh(); }, 1000);
