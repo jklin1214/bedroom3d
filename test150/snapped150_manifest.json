@@ -1,0 +1,286 @@
+{
+  "candidate": "audit150",
+  "src": "/workspace/bedroom/rebuild/audit149/",
+  "dst": "/workspace/bedroom/rebuild/audit150/",
+  "policy": "same-mesh T-junction only (NOT already an edge); N\u00b7N>=0.95; in-plane<=1mm; R=8mm; reject degen-creating; no wall\u2194door weld; verts start in box",
+  "meshes": [
+    "wall",
+    "wall__p",
+    "door",
+    "door__p"
+  ],
+  "R": 0.008,
+  "boxes": [
+    [
+      [
+        -1.2,
+        0.0,
+        3.2
+      ],
+      [
+        2.5,
+        2.2,
+        3.7
+      ]
+    ],
+    [
+      [
+        0.9,
+        0.2,
+        3.2
+      ],
+      [
+        1.9,
+        2.5,
+        3.9
+      ]
+    ],
+    [
+      [
+        1.9,
+        0.0,
+        1.6
+      ],
+      [
+        2.5,
+        2.8,
+        3.3
+      ]
+    ]
+  ],
+  "moved_counts": {
+    "wall": 2,
+    "wall__p": 2
+  },
+  "rejected_degen": {
+    "wall": 0,
+    "wall__p": 0
+  },
+  "stats_before": {
+    "wall": {
+      "boundary_in_box": 456,
+      "close_pairs_all": 38,
+      "close_pairs_Tjunction": 3,
+      "verts_in_box": 2823,
+      "degen_tris_in_box": 58
+    },
+    "door": {
+      "boundary_in_box": 0,
+      "close_pairs_all": 0,
+      "close_pairs_Tjunction": 0,
+      "verts_in_box": 5536,
+      "degen_tris_in_box": 0
+    },
+    "wall__p": {
+      "boundary_in_box": 431,
+      "close_pairs_all": 38,
+      "close_pairs_Tjunction": 3,
+      "verts_in_box": 2765,
+      "degen_tris_in_box": 54
+    },
+    "door__p": {
+      "boundary_in_box": 0,
+      "close_pairs_all": 0,
+      "close_pairs_Tjunction": 0,
+      "verts_in_box": 5536,
+      "degen_tris_in_box": 0
+    }
+  },
+  "stats_after": {
+    "wall": {
+      "boundary_in_box": 456,
+      "close_pairs_Tjunction": 1,
+      "moved": 2,
+      "rejected_degen": 0,
+      "degen_tris_in_box": 58
+    },
+    "door": {
+      "boundary_in_box": 0,
+      "close_pairs_all": 0,
+      "close_pairs_Tjunction": 0,
+      "verts_in_box": 5536,
+      "degen_tris_in_box": 0,
+      "moved": 0,
+      "rejected_degen": 0
+    },
+    "wall__p": {
+      "boundary_in_box": 431,
+      "close_pairs_Tjunction": 1,
+      "moved": 2,
+      "rejected_degen": 0,
+      "degen_tris_in_box": 54
+    },
+    "door__p": {
+      "boundary_in_box": 0,
+      "close_pairs_all": 0,
+      "close_pairs_Tjunction": 0,
+      "verts_in_box": 5536,
+      "degen_tris_in_box": 0,
+      "moved": 0,
+      "rejected_degen": 0
+    }
+  },
+  "moved_bbox": {
+    "min": [
+      -0.22402,
+      0.0,
+      3.45877
+    ],
+    "max": [
+      -0.22402,
+      0.0,
+      3.46551
+    ]
+  },
+  "outside_scope_vertex_changes": [],
+  "new_degenerates_in_box": [],
+  "assert_ok": true,
+  "moved_detail": {
+    "wall": [
+      {
+        "from": [
+          -0.22402,
+          0.0,
+          3.46166
+        ],
+        "to": [
+          -0.22402,
+          0.0,
+          3.46551
+        ],
+        "i": 34989,
+        "k": 34991,
+        "d": 0.00385
+      },
+      {
+        "from": [
+          -0.22402,
+          0.0,
+          3.45877
+        ],
+        "to": [
+          -0.22402,
+          0.0,
+          3.46455
+        ],
+        "i": 34988,
+        "k": 34990,
+        "d": 0.00578
+      }
+    ],
+    "wall__p": [
+      {
+        "from": [
+          -0.22402,
+          0.0,
+          3.46166
+        ],
+        "to": [
+          -0.22402,
+          0.0,
+          3.46551
+        ],
+        "i": 32774,
+        "k": 32776,
+        "d": 0.00385
+      },
+      {
+        "from": [
+          -0.22402,
+          0.0,
+          3.45877
+        ],
+        "to": [
+          -0.22402,
+          0.0,
+          3.46455
+        ],
+        "i": 32773,
+        "k": 32775,
+        "d": 0.00578
+      }
+    ]
+  },
+  "skirting_bake_transfer": {
+    "applied": false,
+    "reason": "topology/position match below threshold or empty",
+    "match_stats": {
+      "skirting": {
+        "verts_in_box": 140,
+        "pos_match<3mm": 131,
+        "normal_agree": 64,
+        "frac_pos": 0.9357142857142857,
+        "frac_full": 0.45714285714285713
+      },
+      "skirting__p": {
+        "verts_in_box": 140,
+        "pos_match<3mm": 131,
+        "normal_agree": 64,
+        "frac_pos": 0.9357142857142857,
+        "frac_full": 0.45714285714285713
+      }
+    },
+    "box": [
+      [
+        1.9,
+        0.0,
+        1.6
+      ],
+      [
+        2.5,
+        0.2,
+        3.2
+      ]
+    ]
+  },
+  "f0018_offline_ray": {
+    "mapping": "walk_neo_day.mp4 is 36.0s with 72 walk3 shots (0.5s/shot). Claude f_0018\u2248t=17s => shot idx\u224834 (not idx17).",
+    "idx17_lower_center": "no brass/metal/steel/oak_dark hits; dominant floor_oak/wall/dleaf_c",
+    "idx34_hits_summary": {
+      "eye_xz": [
+        -4.9,
+        -0.667
+      ],
+      "look_xz": [
+        3.333,
+        0.5
+      ],
+      "meshes": [
+        "steel",
+        "steel__p",
+        "brass",
+        "brass__p"
+      ],
+      "hit_bbox": [
+        [
+          -4.1406,
+          0.4591,
+          -0.3074
+        ],
+        [
+          -3.5446,
+          1.2317,
+          0.6615
+        ]
+      ],
+      "OLD_brass_near_5cm": "21 hits",
+      "OLD_steel_near_5cm": "28 hits",
+      "NEW_boucle_distance": "~0.47\u20130.56m (bar stools present)",
+      "verdict": "Designed bar-stool / island metal+brass near OLD counterparts. DO NOT hide. Corridor gold \u3107 still unproven at idx17; idx34 is dining not corridor."
+    },
+    "action": "none \u2014 no hide without proof of orphan",
+    "ray_files": [
+      "/workspace/kd/f0018_ray_hits.json"
+    ]
+  },
+  "unresolved_verification": [
+    "Visual confirm C01 on 148/150 via public /preview/ after gate (localhost Chrome policy blocks loopback)",
+    "A01\u2013A08 visual: only 2 true same-mesh T-junc snaps applied; most close pairs were already edges (door clearance preserved). Cross-mesh wall\u2194door gaps intentionally NOT welded.",
+    "A04 skirting bake transfer SKIPPED: pos_match 93.6%<95% and normal_agree 45.7%",
+    "f0018: camera index ambiguity (idx17 vs idx34); no orphan proven \u2014 do not hide",
+    "A05/A07 shade-edge / R2 torn beam still open",
+    "56-frame gate not run (no browser automation this run)"
+  ],
+  "publish": "NOT published",
+  "live": "untouched"
+}

@@ -1,0 +1,180 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>版本150・未驗證測試版｜第三戶 主臥 A 3D</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700&display=swap">
+<style>
+/* Layout: full-bleed WebGL stage; a title card top-left carries the look switches (style + day/night), a scrollable view dock sits at the bottom. */
+:root{
+  --card:rgba(250,250,247,.86); --ink:#20241F; --ink-2:#5C635B; --line:rgba(32,36,31,.12); --chip:rgba(32,36,31,.06); --accent:#5F7255; --on-accent:#FFFFFF; --stage:#E9E7E1; --stage-hi:#F8F7F3;
+  --night-lo:#0A0E16; --night-hi:#1C2433;
+  --body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif; --display:"Noto Serif TC","Songti TC",serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--card:rgba(24,27,24,.84);--ink:#E9EBE6;--ink-2:#A6AEA3;--line:rgba(233,235,230,.14);--chip:rgba(233,235,230,.08);--accent:#A9BE9A;--on-accent:#17200F;--stage:#151715;--stage-hi:#262925;color-scheme:dark}}
+:root[data-theme="dark"]{--card:rgba(24,27,24,.84);--ink:#E9EBE6;--ink-2:#A6AEA3;--line:rgba(233,235,230,.14);--chip:rgba(233,235,230,.08);--accent:#A9BE9A;--on-accent:#17200F;--stage:#151715;--stage-hi:#262925;color-scheme:dark}
+html,body{height:100%}
+body{background:var(--stage);color:var(--ink);font-family:var(--body);overflow:hidden}
+#stage{position:fixed;inset:0;touch-action:none;background:radial-gradient(ellipse 80% 70% at 50% 42%,var(--stage-hi),var(--stage))}
+body.night #stage{background:radial-gradient(ellipse 80% 70% at 50% 42%,var(--night-hi),var(--night-lo))}
+#stage canvas{display:block;width:100%;height:100%}
+.card{position:fixed;left:16px;top:calc(env(safe-area-inset-top,0px) + 12px);max-width:min(400px,calc(100% - 32px));grid-template-columns:minmax(0,1fr);background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:7px}
+.card h1{margin:0;font-family:var(--display);font-size:17px;line-height:1.3;text-wrap:balance}
+.ctl{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.seg{display:flex;gap:2px;padding:2px;border-radius:9px;background:var(--chip);max-width:100%;min-width:0;overflow-x:auto;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:0 0 auto;font:inherit;font-size:12.5px;line-height:1.2;color:var(--ink);background:transparent;border:0;border-radius:7px;padding:6px 9px;cursor:pointer;white-space:nowrap}
+.seg button[aria-checked="true"]{background:var(--accent);color:var(--on-accent);font-weight:500}
+.seg button:disabled{color:var(--ink-2);opacity:.5;cursor:default}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.card p{margin:0;font-size:12px;line-height:1.45;color:var(--ink-2)}
+#note,#desc{display:none!important}
+.dock{position:fixed;left:0;right:0;bottom:0;padding:8px 16px calc(env(safe-area-inset-bottom,0px) + 10px);display:grid;gap:6px;justify-items:center;pointer-events:none}
+.views{pointer-events:auto;display:flex;gap:4px;overflow-x:auto;max-width:100%;padding:4px;border-radius:12px;background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);scrollbar-width:none}
+.views::-webkit-scrollbar{display:none}
+.views button{flex:0 0 auto;font:inherit;font-size:13.5px;color:var(--ink);background:transparent;border:0;border-radius:8px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.views button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);font-weight:500}
+.views button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.hint{pointer-events:auto;font-size:12px;color:var(--ink-2);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 12px;display:flex;gap:10px;align-items:center}
+.hint label{display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--ink)}
+.hint input{accent-color:var(--accent)}
+#gattr{font-size:10.5px;color:var(--ink-2);opacity:.85}
+.loader{position:fixed;inset:0;display:grid;place-items:center;background:var(--stage);z-index:5}
+.loader div{display:grid;gap:10px;justify-items:center;width:min(260px,70vw)}
+.loader b{font-family:var(--display);font-size:16px}
+.bar{width:100%;height:4px;border-radius:2px;background:var(--chip);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.loader small{color:var(--ink-2);font-size:12px;font-variant-numeric:tabular-nums}
+@media (max-width:420px){.seg button{padding:6px 7px}}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+<style>
+#testBanner{position:fixed;left:0;right:0;top:0;z-index:100;background:#8B0000;color:#fff;font:700 15px/1.3 -apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif;padding:10px 14px;text-align:center;letter-spacing:.02em;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+#testBanner small{display:block;font-weight:500;font-size:12px;opacity:.92;margin-top:2px}
+body{padding-top:52px}
+.card{top:calc(env(safe-area-inset-top,0px) + 56px) !important}
+#vp{top:calc(env(safe-area-inset-top,0px) + 56px) !important}
+</style>
+<div id="testBanner" role="banner">版本150・未驗證測試版<small>Isolated staging only — not production / not preview · do not treat as approved</small></div>
+<div id="stage" aria-label="第三戶 U3P69A（主臥 A）輕奢風與法式風的 3D 模型，可用手指拖曳轉動"></div>
+<div class="card">
+  <h1>第三戶 主臥 A 3D（測試150）</h1>
+  <div class="ctl">
+    <div class="seg" id="styles" role="radiogroup" aria-label="裝潢風格"></div>
+    <div class="seg" id="times" role="radiogroup" aria-label="時段"></div>
+    <div class="seg" id="outside" role="radiogroup" aria-label="窗外景觀"></div>
+    <div class="seg" id="r10seg" aria-label="投影幕"></div>
+  </div>
+  <p id="note" aria-live="polite">輕奢風・白天，上午陽光</p>
+  <p id="desc"></p>
+</div>
+<div class="dock">
+  <div class="hint" id="hint"><span id="hintText">拖曳旋轉・雙指縮放</span><span id="gattr" hidden>景觀影像 ©Google Earth</span><label id="cutWrap"><input type="checkbox" id="cut" checked>剖切牆面</label></div>
+  <nav class="views" id="views" aria-label="視角"></nav>
+</div>
+<div class="loader" id="loader"><div><b>載入 3D 模型</b><div class="bar"><i id="prog"></i></div><small id="progText">準備中</small></div></div>
+
+<script>window.__fileURL=u=>u;</script><script type="module" src="main.js"></script>
+<!-- VERIFY PANEL (test-only; not production) -->
+<style>
+#vp{position:fixed;right:8px;top:calc(env(safe-area-inset-top,0px)+8px);z-index:20;width:min(280px,46vw);max-height:92vh;overflow:auto;background:rgba(20,24,20,.92);color:#f2f4ef;border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:8px;font:12px/1.35 -apple-system,BlinkMacSystemFont,sans-serif;backdrop-filter:blur(8px)}
+#vp h3{margin:0 0 6px;font:600 13px/1.2 inherit}
+#vp .row{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 6px}
+#vp button{font:inherit;color:#f2f4ef;background:#2c352b;border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:5px 7px;cursor:pointer}
+#vp button:active{background:#4a5a48}
+#vp a{color:#b7d3a8}
+#vp .st{font-size:11px;opacity:.85;margin:0 0 6px;word-break:break-all}
+#vp input{width:52px;font:inherit;background:#111;color:#eee;border:1px solid #444;border-radius:4px;padding:3px}
+</style>
+<div id="vp" aria-label="verify camera panel">
+  <h3>VERIFY · <span id="vpTag">?</span></h3>
+  <p class="st" id="vpStat">waiting for __setView…</p>
+  <div class="row">
+    <a href="../preview/">preview146</a>
+    <a href="./">test150</a>
+    <span style="opacity:.7">C01·Elev·Kit·UP below</span>
+  </div>
+  <div class="row">
+    <button type="button" data-go="c01">C01 TV-wall end</button>
+    <button type="button" data-go="c01b">C01 closer</button>
+    <button type="button" data-go="elev">Elevator hall</button>
+    <button type="button" data-go="kit">Kitchen uppers</button>
+    <button type="button" data-go="play">Play soffit</button>
+    <button type="button" data-go="playup">Play LOOK UP</button>
+    <button type="button" data-go="curt">Curtain-box UP</button>
+    <button type="button" data-go="jamb">Kids door jamb</button>
+  </div>
+  <div class="row">
+    <button type="button" data-n="f">Fwd</button>
+    <button type="button" data-n="b">Back</button>
+    <button type="button" data-n="l">Left</button>
+    <button type="button" data-n="r">Right</button>
+    <button type="button" data-n="u">Eye+</button>
+    <button type="button" data-n="d">Eye-</button>
+    <button type="button" data-n="pu">Pitch UP</button>
+    <button type="button" data-n="pd">Pitch DN</button>
+  </div>
+  <div class="row">
+    <label>eyeX <input id="ex" value="-0.2"></label>
+    <label>eyeY <input id="ey" value="1.55"></label>
+    <label>eyeZ <input id="ez" value="-1.5"></label>
+  </div>
+  <div class="row">
+    <label>tgX <input id="tx" value="2.15"></label>
+    <label>tgY <input id="ty" value="1.4"></label>
+    <label>tgZ <input id="tz" value="1.87"></label>
+    <button type="button" id="vpGo">Go</button>
+  </div>
+</div>
+<script>
+(function(){
+  const tag = location.port || location.host;
+  document.getElementById('vpTag').textContent = tag;
+  const presets = {
+    c01:  [[-2.33,1.55,-2.0],[2.15,1.45,1.87],55],
+    c01b: [[-0.17,1.55,-1.5],[2.15,1.35,1.87],50],
+    elev: [[-7.5,1.55,2.5],[-9.0,1.4,4.0],55],
+    kit:  [[-4.2,1.55,1.2],[-5.2,1.9,1.8],50],
+    play: [[-1.2,1.55,-3.8],[-2.5,2.5,-2.4],50],
+    playup:[[-1.2,1.55,-3.8],[-1.2,2.7,-2.6],55],
+    curt: [[3.5,1.55,-4.8],[3.5,2.7,-5.4],50],
+    jamb: [[1.2,1.55,2.0],[2.11,1.6,3.38],50],
+  };
+  function ready(){ return !!(window.__setView && window.__cam); }
+  function setFields(p,t){
+    ex.value=p[0].toFixed(2); ey.value=p[1].toFixed(2); ez.value=p[2].toFixed(2);
+    tx.value=t[0].toFixed(2); ty.value=t[1].toFixed(2); tz.value=t[2].toFixed(2);
+  }
+  function apply(p,t,f){
+    if(!ready()){ vpStat.textContent='hooks not ready yet'; return; }
+    window.__setView(p,t,f||55);
+    setFields(p,t);
+    const c=window.__cam.position;
+    vpStat.textContent=`eye ${c.x.toFixed(2)},${c.y.toFixed(2)},${c.z.toFixed(2)}`;
+  }
+  function nudge(kind){
+    if(!ready())return;
+    const c=window.__cam.position;
+    // approximate forward from eye→target fields
+    let p=[+ex.value,+ey.value,+ez.value], t=[+tx.value,+ty.value,+tz.value];
+    const f=[t[0]-p[0],0,t[2]-p[2]]; const fl=Math.hypot(f[0],f[2])||1; f[0]/=fl; f[2]/=fl;
+    const step=0.25;
+    if(kind==='f'){p[0]+=f[0]*step;p[2]+=f[2]*step;t[0]+=f[0]*step;t[2]+=f[2]*step;}
+    if(kind==='b'){p[0]-=f[0]*step;p[2]-=f[2]*step;t[0]-=f[0]*step;t[2]-=f[2]*step;}
+    if(kind==='l'){p[0]+=f[2]*step;p[2]-=f[0]*step;t[0]+=f[2]*step;t[2]-=f[0]*step;}
+    if(kind==='r'){p[0]-=f[2]*step;p[2]+=f[0]*step;t[0]-=f[2]*step;t[2]+=f[0]*step;}
+    if(kind==='u'){p[1]+=0.15;t[1]+=0.15;}
+    if(kind==='d'){p[1]-=0.15;t[1]-=0.15;}
+    if(kind==='pu'){t[1]+=0.35;}
+    if(kind==='pd'){t[1]-=0.35;}
+    apply(p,t,55);
+  }
+  document.querySelectorAll('#vp [data-go]').forEach(b=>b.onclick=()=>{
+    const [p,t,f]=presets[b.dataset.go]; apply(p,t,f);
+  });
+  document.querySelectorAll('#vp [data-n]').forEach(b=>b.onclick=()=>nudge(b.dataset.n));
+  vpGo.onclick=()=>apply([+ex.value,+ey.value,+ez.value],[+tx.value,+ty.value,+tz.value],55);
+  const iv=setInterval(()=>{
+    if(ready()){ vpStat.textContent='ready · use presets or nudge'; clearInterval(iv); }
+  },400);
+})();
+</script>
+
+</body></html>
