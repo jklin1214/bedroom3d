@@ -10079,7 +10079,64 @@ function __master() {
 
 setTimeout(()=>{window.__rayO=(x,y)=>{Ff.setFromCamera({x,y},Be);return Ff.intersectObjects(Sa,!1);};window.__cl=cl;window.__cam=Be;window.__Oi=Oi;window.__Bi=Bi;window.__zt=zt;},1);
 
-setTimeout(()=>{window.__look=(x,z)=>Yh({id:"walk",kind:"eye",eyeW:Be.position.clone(),lookW:new A(x,Be.position.y-0.6,z),lens:17,out:0,ev:0.8});window.__lookY=(x,y,z)=>Yh({id:"walk",kind:"eye",eyeW:Be.position.clone(),lookW:new A(x,y,z),lens:17,out:0,ev:0.8});},1);
+setTimeout(()=>{window.__look=(x,z)=>Yh({id:"walk",kind:"eye",eyeW:Be.position.clone(),lookW:new A(x,Be.position.y-0.6,z),lens:17,out:0,ev:0.8});window.__lookY=(x,y,z)=>Yh({id:"walk",kind:"eye",eyeW:Be.position.clone(),lookW:new A(x,y,z),lens:17,out:0,ev:0.8});
+window.__snapCam=(eye,look,opts={})=>{
+  try{At=null;}catch(e){}
+  try{gi=null;}catch(e){}
+  xs="eye";
+  at.enabled=!0;
+  at.enablePan=!1; at.enableZoom=!1;
+  at.rotateSpeed=-0.35;
+  at.minDistance=0.01; at.maxDistance=1;
+  at.minPolarAngle=0.15*Math.PI; at.maxPolarAngle=0.85*Math.PI;
+  try{for(let r in xi)xi[r].setAttribute("aria-pressed","false");}catch(e){}
+  try{Ch.hidden=!0;}catch(e){}
+  try{gr.textContent=yi?"拖曳環顧・點兩下地板走過去":"拖曳環顧・雙擊地板走過去";}catch(e){}
+  const e=new A(+eye[0],+eye[1],+eye[2]);
+  const l=new A(+look[0],+look[1],+look[2]);
+  const dir=l.clone().sub(e);
+  if(dir.lengthSq()<1e-8)dir.set(0,0,-1);
+  dir.normalize();
+  // CRITICAL: OrbitControls eye-mode maxDistance=1 — target MUST stay near eye (~0.15m),
+  // never set target to the far look point or at.update() pulls camera to within 1m of look.
+  Be.position.copy(e);
+  at.target.copy(e).addScaledVector(dir,0.15);
+  if(opts.fov){Be.fov=+opts.fov;Be.updateProjectionMatrix();}
+  else if(typeof fl==="function"){try{Be.fov=fl(opts.lens||17);Be.updateProjectionMatrix();}catch(err){}}
+  at.update();
+  yn={id:"walk",kind:"eye",eyeW:e.clone(),lookW:l.clone(),lens:opts.lens||17,out:0,ev:opts.ev??0.8};
+  const cut=document.getElementById("cut");
+  if(cut&&opts.cut===!1&&cut.checked){cut.checked=!1;if(typeof Nt==="function")Nt();}
+  if(cut&&opts.cut===!0&&!cut.checked){cut.checked=!0;if(typeof Nt==="function")Nt();}
+  try{Iy();}catch(err){}
+  return window.__camState();
+};
+window.__gotoWalk=(eye,look,opts={})=>{
+  // Prefer instant snap (no At tween). Tween path fights eye-mode maxDistance mid-lerp.
+  return window.__snapCam(eye,look,opts);
+};
+window.__camState=()=>{
+  const cut=document.getElementById("cut");
+  const pressed=[...document.querySelectorAll('#views button[aria-pressed="true"]')].map(b=>b.textContent.trim());
+  const f=new A().subVectors(at.target,Be.position);
+  const dist=+f.length().toFixed(3);
+  if(f.lengthSq()>1e-8)f.normalize();
+  // reconstruct intended look along fwd at 3m for HUD
+  const lookApprox=new A().copy(Be.position).addScaledVector(f,3);
+  return{
+    eye:[+Be.position.x.toFixed(3),+Be.position.y.toFixed(3),+Be.position.z.toFixed(3)],
+    target:[+at.target.x.toFixed(3),+at.target.y.toFixed(3),+at.target.z.toFixed(3)],
+    lookApprox:[+lookApprox.x.toFixed(3),+lookApprox.y.toFixed(3),+lookApprox.z.toFixed(3)],
+    fwd:[+f.x.toFixed(3),+f.y.toFixed(3),+f.z.toFixed(3)],
+    ctrlDist:dist,
+    mode:(typeof xs!=="undefined"?xs:"?"),
+    viewBtns:pressed,
+    cut:!!(cut&&cut.checked),
+    fov:+Be.fov.toFixed(1),
+    tween:!!(typeof At!=="undefined"&&At)
+  };
+};
+},1);
 setTimeout(()=>{try{const re=/^kfurn_/;it.children.forEach(o=>{if(!o.isMesh)return;const nm=(o.userData&&o.userData.name)||o.name||"";if(!re.test(nm))return;const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{if(m){m.flatShading=true;if("envMapIntensity" in m)m.envMapIntensity=0;if("roughness" in m)m.roughness=Math.max(m.roughness||0,0.85);if("metalness" in m)m.metalness=0;m.needsUpdate=true;}});});console.log("kfurn flatShading on");}catch(e){console.warn(e);}},50);
 setTimeout(()=>{try{let wallMat=null;it.children.forEach(o=>{if(!o.isMesh)return;const nm=((o.userData&&o.userData.name)||o.name||"");if(nm==="wall"&&o.material)wallMat=Array.isArray(o.material)?o.material[0]:o.material;});it.children.forEach(o=>{if(!o.isMesh)return;const nm=((o.userData&&o.userData.name)||o.name||"");if(!/^wall_ov/.test(nm))return;if(wallMat){const c=wallMat.clone();c.polygonOffset=true;c.polygonOffsetFactor=-1;c.polygonOffsetUnits=-4;c.needsUpdate=true;o.material=c;}else{const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{if(!m)return;m.polygonOffset=true;m.polygonOffsetFactor=-1;m.polygonOffsetUnits=-4;m.needsUpdate=true;});}});console.log("wall_ov polyOffset");}catch(e){console.warn(e);}},70);
 

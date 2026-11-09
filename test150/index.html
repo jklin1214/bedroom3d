@@ -52,10 +52,10 @@ body{padding-top:52px}
 .card{top:calc(env(safe-area-inset-top,0px) + 56px) !important}
 #vp{top:calc(env(safe-area-inset-top,0px) + 56px) !important}
 </style>
-<div id="testBanner" role="banner">版本150・未驗證測試版<small>Isolated staging only — not production / not preview · do not treat as approved</small></div>
+<div id="testBanner" role="banner">版本150・未驗證測試版<small>Isolated staging only — not production / not preview · do not treat as approved · camera controls patch cam151 (geometry unchanged)</small></div>
 <div id="stage" aria-label="第三戶 U3P69A（主臥 A）輕奢風與法式風的 3D 模型，可用手指拖曳轉動"></div>
 <div class="card">
-  <h1>第三戶 主臥 A 3D（測試150）</h1>
+  <h1>第三戶 主臥 A 3D（輕奢風・法式風）</h1>
   <div class="ctl">
     <div class="seg" id="styles" role="radiogroup" aria-label="裝潢風格"></div>
     <div class="seg" id="times" role="radiogroup" aria-label="時段"></div>
@@ -71,25 +71,27 @@ body{padding-top:52px}
 </div>
 <div class="loader" id="loader"><div><b>載入 3D 模型</b><div class="bar"><i id="prog"></i></div><small id="progText">準備中</small></div></div>
 
-<script>window.__fileURL=u=>u;</script><script type="module" src="main.js"></script>
-<!-- VERIFY PANEL (test-only; not production) -->
+<script>window.__fileURL=u=>u;</script><script type="module" src="main.js?v=cam151"></script>
+
+
+<!-- VERIFY PANEL v2 (test-only) -->
 <style>
-#vp{position:fixed;right:8px;top:calc(env(safe-area-inset-top,0px)+8px);z-index:20;width:min(280px,46vw);max-height:92vh;overflow:auto;background:rgba(20,24,20,.92);color:#f2f4ef;border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:8px;font:12px/1.35 -apple-system,BlinkMacSystemFont,sans-serif;backdrop-filter:blur(8px)}
+#vp{position:fixed;right:8px;top:calc(env(safe-area-inset-top,0px)+8px);z-index:20;width:min(300px,48vw);max-height:92vh;overflow:auto;background:rgba(20,24,20,.94);color:#f2f4ef;border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:8px;font:12px/1.35 -apple-system,BlinkMacSystemFont,sans-serif}
 #vp h3{margin:0 0 6px;font:600 13px/1.2 inherit}
 #vp .row{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 6px}
 #vp button{font:inherit;color:#f2f4ef;background:#2c352b;border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:5px 7px;cursor:pointer}
 #vp button:active{background:#4a5a48}
 #vp a{color:#b7d3a8}
-#vp .st{font-size:11px;opacity:.85;margin:0 0 6px;word-break:break-all}
+#vp .st{font-size:11px;opacity:.9;margin:0 0 6px;white-space:pre-wrap;word-break:break-all}
 #vp input{width:52px;font:inherit;background:#111;color:#eee;border:1px solid #444;border-radius:4px;padding:3px}
+#vp label.chk{display:flex;gap:6px;align-items:center}
 </style>
-<div id="vp" aria-label="verify camera panel">
-  <h3>VERIFY · <span id="vpTag">?</span></h3>
-  <p class="st" id="vpStat">waiting for __setView…</p>
+<div id="vp" aria-label="verify camera panel v2">
+  <h3>VERIFY v2 · snapCam cam151</h3>
+  <p class="st" id="vpStat">waiting for __gotoWalk…</p>
   <div class="row">
+    <a href="./">self</a>
     <a href="../preview/">preview146</a>
-    <a href="./">test150</a>
-    <span style="opacity:.7">C01·Elev·Kit·UP below</span>
   </div>
   <div class="row">
     <button type="button" data-go="c01">C01 TV-wall end</button>
@@ -100,6 +102,9 @@ body{padding-top:52px}
     <button type="button" data-go="playup">Play LOOK UP</button>
     <button type="button" data-go="curt">Curtain-box UP</button>
     <button type="button" data-go="jamb">Kids door jamb</button>
+  </div>
+  <div class="row">
+    <label class="chk"><input type="checkbox" id="vpCutOff" checked> force cutaway OFF</label>
   </div>
   <div class="row">
     <button type="button" data-n="f">Fwd</button>
@@ -120,39 +125,47 @@ body{padding-top:52px}
     <label>tgX <input id="tx" value="2.15"></label>
     <label>tgY <input id="ty" value="1.4"></label>
     <label>tgZ <input id="tz" value="1.87"></label>
-    <button type="button" id="vpGo">Go</button>
+    <button type="button" id="vpGo">Go WALK</button>
   </div>
+  <p class="st" id="vpLive">live: —</p>
 </div>
 <script>
 (function(){
-  const tag = location.port || location.host;
-  document.getElementById('vpTag').textContent = tag;
   const presets = {
-    c01:  [[-2.33,1.55,-2.0],[2.15,1.45,1.87],55],
-    c01b: [[-0.17,1.55,-1.5],[2.15,1.35,1.87],50],
-    elev: [[-7.5,1.55,2.5],[-9.0,1.4,4.0],55],
-    kit:  [[-4.2,1.55,1.2],[-5.2,1.9,1.8],50],
-    play: [[-1.2,1.55,-3.8],[-2.5,2.5,-2.4],50],
-    playup:[[-1.2,1.55,-3.8],[-1.2,2.7,-2.6],55],
-    curt: [[3.5,1.55,-4.8],[3.5,2.7,-5.4],50],
-    jamb: [[1.2,1.55,2.0],[2.11,1.6,3.38],50],
+    c01:  [[-2.33,1.55,-2.0],[2.15,1.45,1.87]],
+    c01b: [[-0.17,1.55,-1.5],[2.15,1.35,1.87]],
+    elev: [[-7.5,1.55,2.5],[-9.0,1.4,4.0]],
+    kit:  [[-4.2,1.55,1.2],[-5.2,1.9,1.8]],
+    play: [[-1.2,1.55,-3.8],[-2.5,2.5,-2.4]],
+    playup:[[-1.2,1.55,-3.8],[-1.2,2.7,-2.6]],
+    curt: [[3.5,1.55,-4.8],[3.5,2.7,-5.4]],
+    jamb: [[1.2,1.55,2.0],[2.11,1.6,3.38]],
   };
-  function ready(){ return !!(window.__setView && window.__cam); }
+  function ready(){ return typeof window.__snapCam==='function' && typeof window.__camState==='function'; }
   function setFields(p,t){
     ex.value=p[0].toFixed(2); ey.value=p[1].toFixed(2); ez.value=p[2].toFixed(2);
     tx.value=t[0].toFixed(2); ty.value=t[1].toFixed(2); tz.value=t[2].toFixed(2);
   }
-  function apply(p,t,f){
+  function refresh(){
+    if(!ready()) return;
+    const st=window.__camState();
+    const req=lastReq?`REQ eye ${lastReq.eye.map(x=>+x.toFixed(3)).join(', ')}\nREQ look ${lastReq.look.map(x=>+x.toFixed(3)).join(', ')}`:'REQ (none yet)';
+    vpLive.textContent = req+`\nACTUAL mode=${st.mode} cut=${st.cut} tween=${st.tween} ctrlDist=${st.ctrlDist}\neye ${st.eye.join(', ')}\ntrg ${st.target.join(', ')} (controls)\nlook≈ ${st.lookApprox.join(', ')}\nfwd ${st.fwd.join(', ')}\nviews[${st.viewBtns.join('|')||'none'}] fov=${st.fov}`;
+    return st;
+  }
+  let lastReq=null;
+  function apply(p,t){
     if(!ready()){ vpStat.textContent='hooks not ready yet'; return; }
-    window.__setView(p,t,f||55);
+    const cutOff = vpCutOff.checked;
+    lastReq={eye:p.slice(),look:t.slice()};
+    const st=window.__snapCam(p,t,{cut: cutOff?false:undefined, lens:17, fov:55});
     setFields(p,t);
-    const c=window.__cam.position;
-    vpStat.textContent=`eye ${c.x.toFixed(2)},${c.y.toFixed(2)},${c.z.toFixed(2)}`;
+    const ok=st && Math.hypot(st.eye[0]-p[0],st.eye[1]-p[1],st.eye[2]-p[2])<0.05;
+    vpStat.textContent=(ok?'SNAP OK':'SNAP DRIFT')+' req eye '+p.map(x=>x.toFixed(2)).join(',')+'\nactual '+st.eye.join(',')+' mode='+st.mode+' ctrlDist='+st.ctrlDist;
+    setTimeout(refresh, 100);
+    setTimeout(refresh, 400);
   }
   function nudge(kind){
-    if(!ready())return;
-    const c=window.__cam.position;
-    // approximate forward from eye→target fields
     let p=[+ex.value,+ey.value,+ez.value], t=[+tx.value,+ty.value,+tz.value];
     const f=[t[0]-p[0],0,t[2]-p[2]]; const fl=Math.hypot(f[0],f[2])||1; f[0]/=fl; f[2]/=fl;
     const step=0.25;
@@ -164,16 +177,17 @@ body{padding-top:52px}
     if(kind==='d'){p[1]-=0.15;t[1]-=0.15;}
     if(kind==='pu'){t[1]+=0.35;}
     if(kind==='pd'){t[1]-=0.35;}
-    apply(p,t,55);
+    apply(p,t);
   }
   document.querySelectorAll('#vp [data-go]').forEach(b=>b.onclick=()=>{
-    const [p,t,f]=presets[b.dataset.go]; apply(p,t,f);
+    const [p,t]=presets[b.dataset.go]; apply(p,t);
   });
   document.querySelectorAll('#vp [data-n]').forEach(b=>b.onclick=()=>nudge(b.dataset.n));
-  vpGo.onclick=()=>apply([+ex.value,+ey.value,+ez.value],[+tx.value,+ty.value,+tz.value],55);
+  vpGo.onclick=()=>apply([+ex.value,+ey.value,+ez.value],[+tx.value,+ty.value,+tz.value]);
   const iv=setInterval(()=>{
-    if(ready()){ vpStat.textContent='ready · use presets or nudge'; clearInterval(iv); }
+    if(ready()){ vpStat.textContent='ready · __snapCam (target near eye; bypasses maxDistance=1 pull); HUD REQ vs ACTUAL'; clearInterval(iv); refresh(); }
   },400);
+  setInterval(()=>{ if(ready()) refresh(); }, 1000);
 })();
 </script>
 
