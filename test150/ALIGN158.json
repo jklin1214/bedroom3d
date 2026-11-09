@@ -1,0 +1,77 @@
+{
+  "method": "real pack verts + photo edge peaks; global (dx,dy) fit",
+  "camera": {
+    "eye": [
+      -0.17,
+      1.55,
+      -1.5
+    ],
+    "fwd_hud": [
+      0.566,
+      -0.049,
+      0.823
+    ],
+    "fov_v": 55,
+    "W": 1229,
+    "H": 686
+  },
+  "shift_px": {
+    "dx": -38.25,
+    "dy": -3.5
+  },
+  "landmarks": [
+    {
+      "name": "TV-R blue",
+      "world": [
+        2.13,
+        1.55,
+        0.7
+      ],
+      "meas_x": 441,
+      "err": 2.03
+    },
+    {
+      "name": "FE free-edge z1.865",
+      "world": [
+        2.132,
+        1.4,
+        1.865
+      ],
+      "meas_x": 577,
+      "err": 0.87
+    },
+    {
+      "name": "door open L z2.011",
+      "world": [
+        2.12,
+        1.4,
+        2.011
+      ],
+      "meas_x": 595,
+      "err": 2.61
+    },
+    {
+      "name": "ceiling walltop FE",
+      "world": [
+        2.132,
+        2.8,
+        1.865
+      ],
+      "meas_y": 99,
+      "err": 2.58
+    },
+    {
+      "name": "ceiling walltop doorL",
+      "world": [
+        2.132,
+        2.8,
+        2.03
+      ],
+      "meas_y": 111,
+      "err": 2.68
+    }
+  ],
+  "max_err_px": 2.68,
+  "ok": true,
+  "note": "1D vert-profile NCC peaked at dx=-37; joint fit dx=-38.25,dy=-3.5. Door peak 595 is secondary edge next to slot 577. Peaks 786/846 are headboard/other-door, NOT hall door."
+}

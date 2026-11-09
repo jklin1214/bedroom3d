@@ -5346,7 +5346,7 @@ function el(i) {
       " MB"));
 }
 async function Hh(i, e) {
-  let t = await fetch(i);
+  let t = await fetch(i + (i.includes("?") ? "&" : "?") + "v=" + (window.__CACHE_V || "cap158"));
   if (!t.ok) throw new Error(i + " " + t.status);
   let n = t.body.getReader(),
     s = [],
@@ -10281,8 +10281,8 @@ window.__diagInfo=()=>{
   const L=window.__diagList();
   const walls=(L.rows||[]).filter(r=>r.name==='wall'||r.nameProp==='wall'||r.userDataName==='wall');
   return {
-    note:'XH-OFF157b — jamb cap + variants.bytes=lightBytes+1; Xh off; ?xh=on',
-    baseline:{expect_wall_ntri:107011, actual_wall_ntri_main:L.wall_ntri_main, label:'preview146/audit146'},
+    note:'XH-OFF158 / cap158 — FE↔BK -X stitch + giant trim; Xh off; ?xh=on',
+    baseline:{expect_wall_ntri:107045, actual_wall_ntri_main:L.wall_ntri_main, label:'preview146/audit146'},
     predictions:window.__diagPredictions,
     cam:(typeof window.__camState==='function'?window.__camState():null),
     renderer:window.__diagRendererInfo(),
