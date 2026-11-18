@@ -6820,7 +6820,7 @@ async function Yy() {
           uoff: Math.floor(on(De, 1) * 8) * 0.25,
           voff: (Math.floor(on(De, 2) * 6) * Ht[1]) / 6,
         },
-        ot = ct === "bldg3" || ct === "bldgc" ? [1, 1, 1] : x[Math.floor(on(De, 5) * x.length)];
+        ot = ct === "bldg3" || ct === "bldgc" || ct === "bldgd" ? [1, 1, 1] : x[Math.floor(on(De, 5) * x.length)];
       if (fe) {
         $t(p[ct], w, k, H, $, 0, Q, { tex: Yt, topGB: d, alb: ot });
         return;
