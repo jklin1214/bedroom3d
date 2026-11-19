@@ -8246,6 +8246,7 @@ async function $y() {
       "rug2",
       "rug_living",
       "outdoor",
+      "balc_floor",
       "c_marble",
       "c_dmarble",
       "c_paving",
@@ -8256,7 +8257,6 @@ async function $y() {
         !I.emit &&
         !I.op &&
         U.name !== "soffit" &&
-        U.name !== "balc_floor" &&
         Sa.push(ee),
       (U.name === "soffit" || U.name === "balc_floor") &&
         (Vf.push(ee), (ee.visible = He)),
@@ -9248,7 +9248,7 @@ function Tp(i, e) {
     c.lengthSq() < 1e-6 && c.set(0, 0, -1),
     c.normalize());
   let h = new A(r.point.x, r.point.y + 1.45, r.point.z),
-    u = ["outdoor", "c_paving", "c_lawn", "envground"].includes(r.object.name);
+    u = ["outdoor", "balc_floor", "c_paving", "c_lawn", "envground"].includes(r.object.name);
   if (!u) {
     try {
       __walkClear(h, xs !== "orbit" ? Be.position : null);
